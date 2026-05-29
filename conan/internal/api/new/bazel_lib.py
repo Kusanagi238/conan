@@ -106,6 +106,11 @@ cc_binary(
 
 _bazel_build = """\
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+cc_library(
+    name = "{{name}}",
+    srcs = ["{{name}}.cpp"],
+    hdrs = ["{{name}}.h"],
+)
 """
 
 _bazel_build_shared = """
@@ -135,13 +140,7 @@ use_repo(load_conan_dependencies, "{{name}}")
 def _get_bazel_build():
     import platform
     os_ = platform.system()
-    ret = _bazel_build + """\
-cc_library(
-    name = "{{name}}",
-    srcs = ["{{name}}.cpp"],
-    hdrs = ["{{name}}.h"],
-)
-"""
+    ret = _bazel_build
     if os_ != "Linux":
         ret += _bazel_build_shared % ("dylib" if os_ == "Darwin" else "dll")
     return ret
