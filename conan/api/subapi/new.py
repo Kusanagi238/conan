@@ -92,8 +92,6 @@ class NewAPI:
         from conan.internal.api.new.msbuild_exe import msbuild_exe_files
         from conan.internal.api.new.bazel_lib import bazel_lib_files
         from conan.internal.api.new.bazel_exe import bazel_exe_files
-        from conan.internal.api.new.bazel_7_lib import bazel_lib_files_7
-        from conan.internal.api.new.bazel_7_exe import bazel_exe_files_7
         from conan.internal.api.new.autotools_lib import autotools_lib_files
         from conan.internal.api.new.autoools_exe import autotools_exe_files
         from conan.internal.api.new.premake_lib import premake_lib_files
