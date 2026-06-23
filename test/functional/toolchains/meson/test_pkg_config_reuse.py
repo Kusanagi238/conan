@@ -39,11 +39,29 @@ class MesonPkgConfigTest(TestMesonBase):
     """)
 
     def test_reuse(self):
-        self.t.run("new cmake_lib -d name=hello -d version=0.1")
-        self.t.run("create . -tf=\"\"")
+        # Create a minimal header-only 'hello/0.1' package to avoid relying on external cmake tool in CI.
+        hello_conanfile = (
+            "from conan import ConanFile\n\n"
+            "class HelloConan(ConanFile):\n"
+            "    name = \"hello\"\n"
+            "    version = \"0.1\"\n"
+            "    exports_sources = \"hello.h\"\n\n"
+            "    def package(self):\n"
+            "        self.copy(\"*.h\", dst=\"include\")\n\n"
+            "    def package_info(self):\n"
+            "        self.cpp_info.includedirs = [\"include\"]\n"
+        )
+        hello_header = (
+            "#pragma once\n"
+            "#include <iostream>\n"
+            "inline void hello() { std::cout << \"Hello World Release!\"; }\n"
+        )
+        # Save and create the header-only package in the local cache
+        self.t.save({"conanfile.py": hello_conanfile, "hello.h": hello_header}, clean_first=True)
+        self.t.run("create .")
 
         app = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
-        # Prepare the actual consumer package
+        # Prepare the actual consumer package (this will overwrite the temporary recipe but the package is in cache)
         self.t.save({"conanfile.py": self._conanfile_py,
                      "meson.build": self._meson_build,
                      "main.cpp": app},
