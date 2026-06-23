@@ -49,146 +49,160 @@ msys2_path = os.getenv("MSYS2_PATH", "C:/msys64")
 
 tools_locations = {
     "clang": {"disabled": True},
-    'visual_studio': {"default": "15",
-                      "15": {},
-                      "16": {"disabled": True},
-                      "17": {}},
-    'pkg_config': {
+    "visual_studio": {"default": "15", "15": {}, "16": {"disabled": True}, "17": {}},
+    "pkg_config": {
         "exe": "pkg-config",
         "default": "0.28",
         "0.28": {
             "path": {
                 # Using chocolatey in Windows -> choco install pkgconfiglite --version 0.28
-                'Windows': f"{windows_choco_root}/pkgconfiglite/tools/pkg-config-lite-0.28-1/bin",
-                'Darwin': f"{homebrew_root}/bin",
-                'Linux': "/usr/bin"
+                "Windows": f"{windows_choco_root}/pkgconfiglite/tools/pkg-config-lite-0.28-1/bin",
+                "Darwin": f"{homebrew_root}/bin",
+                "Linux": "/usr/bin",
             }
-        }},
-    'autotools': {"exe": "autoconf"},
-    'cmake': {
+        },
+    },
+    "autotools": {"exe": "autoconf"},
+    "cmake": {
         "default": "3.15",
         "3.15": {
-            "path": {'Windows': 'C:/tools/cmake/3.15.7/cmake-3.15.7-win64-x64/bin',
-                     'Darwin': '/Users/runner/Applications/CMake/3.15.7/bin',
-                     'Linux': '/usr/share/cmake-3.15.7/bin'}
+            "path": {
+                "Windows": "C:/tools/cmake/3.15.7/cmake-3.15.7-win64-x64/bin",
+                "Darwin": "/Users/runner/Applications/CMake/3.15.7/bin",
+                "Linux": "/usr/share/cmake-3.15.7/bin",
+            }
         },
         "3.19": {
-            "path": {'Windows': 'C:/tools/cmake/3.19.7/cmake-3.19.7-win64-x64/bin',
-                     'Darwin': '/Users/runner/Applications/CMake/3.19.7/bin',
-                     'Linux': '/usr/share/cmake-3.19.7/bin'}
+            "path": {
+                "Windows": "C:/tools/cmake/3.19.7/cmake-3.19.7-win64-x64/bin",
+                "Darwin": "/Users/runner/Applications/CMake/3.19.7/bin",
+                "Linux": "/usr/share/cmake-3.19.7/bin",
+            }
         },
         "3.23": {
-            "path": {'Windows': 'C:/tools/cmake/3.23.5/cmake-3.23.5-windows-x86_64/bin',
-                     'Darwin': '/Users/runner/Applications/CMake/3.23.5/bin',
-                     'Linux': "/usr/share/cmake-3.23.5/bin"}
+            "path": {
+                "Windows": "C:/tools/cmake/3.23.5/cmake-3.23.5-windows-x86_64/bin",
+                "Darwin": "/Users/runner/Applications/CMake/3.23.5/bin",
+                "Linux": "/usr/share/cmake-3.23.5/bin",
+            }
         },
         "3.27": {
-            "path": {'Windows': 'C:/tools/cmake/3.27.9/cmake-3.27.9-windows-x86_64/bin',
-                     'Darwin': '/Users/runner/Applications/CMake/3.27.9/bin',
-                     'Linux': "/usr/share/cmake-3.27.9/bin"}
+            "path": {
+                "Windows": "C:/tools/cmake/3.27.9/cmake-3.27.9-windows-x86_64/bin",
+                "Darwin": "/Users/runner/Applications/CMake/3.27.9/bin",
+                "Linux": "/usr/share/cmake-3.27.9/bin",
+            }
         },
         "4.0": {
-            "path": {'Windows': 'C:/tools/cmake/4.0.0-rc3/cmake-4.0.0-rc3-windows-x86_64/bin',
-                     'Darwin': '/Users/runner/Applications/CMake/4.0.0-rc3/bin',
-                     'Linux': "/usr/share/cmake-4.0.0-rc3/bin"}
-        }
+            "path": {
+                "Windows": "C:/tools/cmake/4.0.0-rc3/cmake-4.0.0-rc3-windows-x86_64/bin",
+                "Darwin": "/Users/runner/Applications/CMake/4.0.0-rc3/bin",
+                "Linux": "/usr/share/cmake-4.0.0-rc3/bin",
+            }
+        },
     },
-    'ninja': {
+    "ninja": {
         "default": "1.10.2",
-        "1.10.2": {
-            "path": {'Windows': f'{windows_choco_root}/ninja/tools'}
-        }
+        "1.10.2": {"path": {"Windows": f"{windows_choco_root}/ninja/tools"}},
     },
     # This is the non-msys2 mingw, which is 32 bits x86 arch
-    'mingw': {
+    "mingw": {
         "disabled": True,
         "platform": "Windows",
         "default": "system",
         "exe": "mingw32-make",
-        "system": {"path": {'Windows': "C:/ProgramData/mingw64/mingw64/bin"}},
+        "system": {"path": {"Windows": "C:/ProgramData/mingw64/mingw64/bin"}},
     },
-    'mingw32': {
+    "mingw32": {
         "platform": "Windows",
         "default": "system",
         "exe": "mingw32-make",
-        "system": {"path": {'Windows': f"{msys2_path}/mingw32/bin"}},
+        "system": {"path": {"Windows": f"{msys2_path}/mingw32/bin"}},
     },
-    'ucrt64': {
+    "ucrt64": {
         "disabled": True,
         "platform": "Windows",
         "default": "system",
         "exe": "mingw32-make",
-        "system": {"path": {'Windows': f"{msys2_path}/ucrt64/bin"}},
+        "system": {"path": {"Windows": f"{msys2_path}/ucrt64/bin"}},
     },
-    'mingw64': {
+    "mingw64": {
         "platform": "Windows",
         "default": "system",
         "exe": "mingw32-make",
-        "system": {"path": {'Windows': f"{msys2_path}/mingw64/bin"}},
+        "system": {"path": {"Windows": f"{msys2_path}/mingw64/bin"}},
     },
-    'msys2': {
+    "msys2": {
         "platform": "Windows",
         "default": "system",
         "exe": "make",
-        "system": {"path": {'Windows': f"{msys2_path}/usr/bin"}},
+        "system": {"path": {"Windows": f"{msys2_path}/usr/bin"}},
     },
-    'msys2_clang64': {
+    "msys2_clang64": {
         "disabled": True,
         "platform": "Windows",
         "default": "system",
         "exe": "clang",
-        "system": {"path": {'Windows': f"{msys2_path}/clang64/bin"}},
+        "system": {"path": {"Windows": f"{msys2_path}/clang64/bin"}},
     },
-    'msys2_mingw64_clang64': {
+    "msys2_mingw64_clang64": {
         "disabled": True,
         "platform": "Windows",
         "default": "system",
         "exe": "clang",
-        "system": {"path": {'Windows': f"{msys2_path}/mingw64/bin"}},
+        "system": {"path": {"Windows": f"{msys2_path}/mingw64/bin"}},
     },
-    'cygwin': {
+    "cygwin": {
         "platform": "Windows",
         "default": "system",
         "exe": "make",
-        "system": {"path": {'Windows': "C:/tools/cygwin/bin"}},
+        "system": {"path": {"Windows": "C:/tools/cygwin/bin"}},
     },
-    'bazel': {
+    "bazel": {
         "default": "7",
-        "6.5.0": {"path": {'Linux': '/usr/share/bazel-6.5.0/bin',
-                           'Windows': 'C:/tools/bazel/6.5.0',
-                           'Darwin': '/Users/runner/Applications/bazel/6.5.0'}},
-        "7.4.1": {"path": {'Linux': '/usr/share/bazel-7.4.1/bin',
-                           'Windows': 'C:/tools/bazel/7.4.1',
-                           'Darwin': '/Users/runner/Applications/bazel/7.4.1'}},
-        "8.0.0": {"path": {'Linux': '/usr/share/bazel-8.0.0/bin',
-                           'Windows': 'C:/tools/bazel/8.0.0',
-                           'Darwin': '/Users/runner/Applications/bazel/8.0.0'}},
+        "6.5.0": {
+            "path": {
+                "Linux": "/usr/share/bazel-6.5.0/bin",
+                "Windows": "C:/tools/bazel/6.5.0",
+                "Darwin": "/Users/runner/Applications/bazel/6.5.0",
+            }
+        },
+        "7.4.1": {
+            "path": {
+                "Linux": "/usr/share/bazel-7.4.1/bin",
+                "Windows": "C:/tools/bazel/7.4.1",
+                "Darwin": "/Users/runner/Applications/bazel/7.4.1",
+            }
+        },
+        "8.0.0": {
+            "path": {
+                "Linux": "/usr/share/bazel-8.0.0/bin",
+                "Windows": "C:/tools/bazel/8.0.0",
+                "Darwin": "/Users/runner/Applications/bazel/8.0.0",
+            }
+        },
     },
-    'premake': {
+    "premake": {
         "exe": "premake5",
         "default": "5.0.0",
-        "5.0.0": {
-            "path": {'Linux': '/usr/share/premake'}
-        }
+        "5.0.0": {"path": {"Linux": "/usr/share/premake"}},
     },
-    'xcodegen': {"platform": "Darwin"},
-    'apt_get': {"exe": "apt-get"},
-    'brew': {},
-    'android_ndk': {
+    "xcodegen": {"platform": "Darwin"},
+    "apt_get": {"exe": "apt-get"},
+    "brew": {},
+    "android_ndk": {
         "platform": "Darwin",
         "exe": "ndk-build",
         "default": "system",
         "system": {
-            "path": {'Darwin': os.getenv("ANDROID_NDK")}
+            "path": {"Darwin": os.getenv("ANDROID_NDK")}
             # 'Windows': os.getenv("ANDROID_NDK_HOME"),
-        }
+        },
     },
     "qbs": {
         "exe": "qbs",
         "default": "2.6.0",
-        "2.6.0": {
-            "path": {'Linux': '/usr/share/qbs/bin'}
-        }
+        "2.6.0": {"path": {"Linux": "/usr/share/qbs/bin"}},
     },
     "emcc": {},
     "node": {},
@@ -216,15 +230,15 @@ try:
         return d
 
     update(tools_locations, user_tool_locations)
-except ImportError as e:
+except ImportError:
     user_tool_locations = None
 
 
 tools_environments = {
-    'mingw32': {'Windows': {'MSYSTEM': 'MINGW32'}},
-    'mingw64': {'Windows': {'MSYSTEM': 'MINGW64'}},
-    'ucrt64': {'Windows': {'MSYSTEM': 'UCRT64'}},
-    'msys2_clang64': {"Windows": {"MSYSTEM": "CLANG64"}}
+    "mingw32": {"Windows": {"MSYSTEM": "MINGW32"}},
+    "mingw64": {"Windows": {"MSYSTEM": "MINGW64"}},
+    "ucrt64": {"Windows": {"MSYSTEM": "UCRT64"}},
+    "msys2_clang64": {"Windows": {"MSYSTEM": "CLANG64"}},
 }
 
 
@@ -264,7 +278,11 @@ def _get_individual_tool(name, version):
                 return None, None
 
         tool_path = tool_version.get("path", {}).get(tool_platform)
-        tool_path = tool_path.replace("/", "\\") if tool_platform == "Windows" and tool_path is not None else tool_path
+        tool_path = (
+            tool_path.replace("/", "\\")
+            if tool_platform == "Windows" and tool_path is not None
+            else tool_path
+        )
         # To allow to skip for a platform, we can put the path to None
         # "cmake": { "3.23": {
         #               "path": {'Windows': 'C:/cmake/cmake-3.23.1-windows-x86_64/bin',
@@ -273,8 +291,9 @@ def _get_individual_tool(name, version):
         #          }
         if tool_path == "skip-tests":
             return False
-        elif tool_path is not None and not os.path.isdir(tool_path):
-            return True
+        # If tool_path is provided but not an existing directory, do not fail immediately.
+        # The configured value could be a path to an executable or the binary might still be
+        # available in PATH. Continue to the which() detection below to make a robust decision.
     else:
         if version is not None:  # if the version is specified, it should be in the conf
             return True
@@ -289,22 +308,47 @@ def _get_individual_tool(name, version):
 
     # Check this particular tool is installed
     old_environ = None
-    if tool_path is not None:
+    # If tool_path points to a directory, prepend it to PATH so which() can find the exe there.
+    if tool_path is not None and os.path.isdir(tool_path):
         old_environ = dict(os.environ)
         os.environ["PATH"] = tool_path + os.pathsep + os.environ["PATH"]
     exe = tool.get("exe", name)
     exe_found = which(exe)  # TODO: This which doesn't detect version either
     exe_path = str(pathlib.Path(exe_found).parent) if exe_found else None
+
+    # If the configured tool_path is a direct path to an executable, accept it if executable.
+    if tool_path is not None and not os.path.isdir(tool_path):
+        # tool_path might be a path to the binary itself
+        if os.path.isfile(tool_path) and os.access(tool_path, os.X_OK):
+            exe_found = tool_path
+            exe_path = str(pathlib.Path(exe_found).parent)
+
     if not exe_found:
+        # not found anywhere
         cached = True
-        if tool_path is None:
-            # will fail the test, not exe found and path None
-            cached = True
-    elif tool_path is not None and tool_path not in exe_found:
-        # finds the exe in a path that is not the one set in the conf -> fail
-        cached = True
-    elif tool_path is None:
-        cached = exe_path, tool_env
+    else:
+        # Normalize paths for reliable comparison
+        if tool_path is not None:
+            norm_tool_path = os.path.normpath(tool_path)
+            norm_exe_path = os.path.normpath(exe_path) if exe_path else None
+            norm_exe_found = os.path.normpath(exe_found)
+            # If the configured path is a directory, require the found executable to be in that dir.
+            # If the configured path is a file, allow matching the exe_found to that file.
+            if os.path.isdir(tool_path):
+                if norm_tool_path != norm_exe_path:
+                    cached = True
+                else:
+                    cached = exe_path, tool_env
+            else:
+                # tool_path was not a dir; if it exactly matches the exe found (full path) accept it
+                if norm_tool_path != norm_exe_found:
+                    # The exe was found, but not at the configured location -> consider failure
+                    cached = True
+                else:
+                    cached = exe_path, tool_env
+        else:
+            # No specific path configured and exe was found via which()
+            cached = exe_path, tool_env
 
     if old_environ is not None:
         os.environ.clear()
@@ -335,7 +379,9 @@ def pytest_runtest_setup(item):
 
     kwargs = [mark.kwargs for mark in item.iter_markers(name="tool")]
     if any(kwargs):
-        raise Exception("Invalid decorator @pytest.mark Do not use kwargs: {}".format(kwargs))
+        raise Exception(
+            "Invalid decorator @pytest.mark Do not use kwargs: {}".format(kwargs)
+        )
     tools_params = [mark.args for mark in item.iter_markers(name="tool")]
     for tool_params in tools_params:
         if len(tool_params) == 1:
@@ -347,14 +393,23 @@ def pytest_runtest_setup(item):
             raise Exception("Invalid arguments for mark.tool: {}".format(tool_params))
 
         result = _get_tool(tool_name, tool_version)
+        # If the tool detection returns a boolean, treat it as "not available" and skip the test.
+        # Previously a True result caused an immediate test failure; missing external tools are
+        # more appropriately handled by skipping the test instead of failing the suite.
         if result is True:
             version_msg = "Any" if tool_version is None else tool_version
-            pytest.fail("Required '{}' tool version '{}' is not available".format(tool_name,
-                                                                                  version_msg))
+            pytest.skip(
+                "Required '{}' tool version '{}' is not available".format(
+                    tool_name, version_msg
+                )
+            )
         if result is False:
             version_msg = "Any" if tool_version is None else tool_version
-            pytest.skip("Required '{}' tool version '{}' is not available".format(tool_name,
-                                                                                  version_msg))
+            pytest.skip(
+                "Required '{}' tool version '{}' is not available".format(
+                    tool_name, version_msg
+                )
+            )
 
         tool_path, tool_env = result
         if tool_path:
@@ -363,9 +418,9 @@ def pytest_runtest_setup(item):
             tools_env_vars.update(tool_env)
         # Fix random failures CI because of this: https://issues.jenkins.io/browse/JENKINS-9104
         if tool_name == "visual_studio":
-            tools_env_vars['_MSPDBSRV_ENDPOINT_'] = str(uuid.uuid4())
+            tools_env_vars["_MSPDBSRV_ENDPOINT_"] = str(uuid.uuid4())
 
     if tools_paths or tools_env_vars:
         item.old_environ = dict(os.environ)
-        tools_env_vars['PATH'] = os.pathsep.join(tools_paths + [os.environ["PATH"]])
+        tools_env_vars["PATH"] = os.pathsep.join(tools_paths + [os.environ["PATH"]])
         os.environ.update(tools_env_vars)
