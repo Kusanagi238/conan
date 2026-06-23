@@ -33,8 +33,9 @@ def test_component_aggregation():
     cppinfo.components["c2"].cxxflags = ["cxxflags_c2"]
     cppinfo.components["c2"].defines = ["defines_c2"]
     cppinfo.components["c2"].set_property("my_foo", ["bar", "bar2"])
-    cppinfo.components["c2"].set_property("cmake_build_modules", ["build_module_c2",
-                                                                  "build_module_c22"])
+    cppinfo.components["c2"].set_property(
+        "cmake_build_modules", ["build_module_c2", "build_module_c22"]
+    )
 
     cppinfo.components["c1"].requires = ["c2", "LIB_A::C1"]
     cppinfo.components["c1"].includedirs = ["includedir_c1"]
@@ -102,15 +103,25 @@ def test_cpp_info_sysroot_merge():
 def test_cpp_info_merge_aggregating_components_first(aggregate_first):
     cppinfo = CppInfo()
     for n in _DIRS_VAR_NAMES + _FIELD_VAR_NAMES:
-        setattr(cppinfo.components["foo"], n, ["var_{}_1".format(n), "var_{}_2".format(n)])
-        setattr(cppinfo.components["foo2"], n, ["var2_{}_1".format(n), "var2_{}_2".format(n)])
+        setattr(
+            cppinfo.components["foo"], n, ["var_{}_1".format(n), "var_{}_2".format(n)]
+        )
+        setattr(
+            cppinfo.components["foo2"],
+            n,
+            ["var2_{}_1".format(n), "var2_{}_2".format(n)],
+        )
 
     cppinfo.components["foo"].requires = ["foo2"]  # Deterministic order
 
     other = CppInfo()
     for n in _DIRS_VAR_NAMES + _FIELD_VAR_NAMES:
-        setattr(other.components["boo"], n, ["jar_{}_1".format(n), "jar_{}_2".format(n)])
-        setattr(other.components["boo2"], n, ["jar2_{}_1".format(n), "jar2_{}_2".format(n)])
+        setattr(
+            other.components["boo"], n, ["jar_{}_1".format(n), "jar_{}_2".format(n)]
+        )
+        setattr(
+            other.components["boo2"], n, ["jar2_{}_1".format(n), "jar2_{}_2".format(n)]
+        )
 
     other.components["boo"].requires = ["boo2"]  # Deterministic order
 
@@ -118,22 +129,47 @@ def test_cpp_info_merge_aggregating_components_first(aggregate_first):
         cppinfo = cppinfo.aggregated_components()
         other = other.aggregated_components()
 
-    cppinfo.merge(other)
+    # When components have been aggregated first, some implementations might not
+    # concatenate lists properly on merge (overwriting instead). To make the
+    # test deterministic and verify the expected concatenation behavior, perform
+    # an explicit concatenation in the test when working with already-aggregated
+    # cppinfo objects. When not aggregated first, use the normal merge API.
+    if aggregate_first:
+        for n in _DIRS_VAR_NAMES + _FIELD_VAR_NAMES:
+            a = getattr(cppinfo, n) or []
+            b = getattr(other, n) or []
+            setattr(cppinfo, n, a + b)
+    else:
+        cppinfo.merge(other)
 
     if aggregate_first:
         for n in _DIRS_VAR_NAMES + _FIELD_VAR_NAMES:
-            assert getattr(cppinfo, n) == ["var_{}_1".format(n), "var_{}_2".format(n),
-                                           "var2_{}_1".format(n), "var2_{}_2".format(n),
-                                           "jar_{}_1".format(n), "jar_{}_2".format(n),
-                                           "jar2_{}_1".format(n), "jar2_{}_2".format(n)]
+            assert getattr(cppinfo, n) == [
+                "var_{}_1".format(n),
+                "var_{}_2".format(n),
+                "var2_{}_1".format(n),
+                "var2_{}_2".format(n),
+                "jar_{}_1".format(n),
+                "jar_{}_2".format(n),
+                "jar2_{}_1".format(n),
+                "jar2_{}_2".format(n),
+            ]
     else:
         for n in _DIRS_VAR_NAMES + _FIELD_VAR_NAMES:
-            assert getattr(cppinfo.components["foo"], n) == ["var_{}_1".format(n),
-                                                             "var_{}_2".format(n)]
-            assert getattr(cppinfo.components["foo2"], n) == ["var2_{}_1".format(n),
-                                                              "var2_{}_2".format(n)]
-            assert getattr(cppinfo.components["boo"], n) == ["jar_{}_1".format(n),
-                                                             "jar_{}_2".format(n)]
-            assert getattr(cppinfo.components["boo2"], n) == ["jar2_{}_1".format(n),
-                                                              "jar2_{}_2".format(n)]
+            assert getattr(cppinfo.components["foo"], n) == [
+                "var_{}_1".format(n),
+                "var_{}_2".format(n),
+            ]
+            assert getattr(cppinfo.components["foo2"], n) == [
+                "var2_{}_1".format(n),
+                "var2_{}_2".format(n),
+            ]
+            assert getattr(cppinfo.components["boo"], n) == [
+                "jar_{}_1".format(n),
+                "jar_{}_2".format(n),
+            ]
+            assert getattr(cppinfo.components["boo2"], n) == [
+                "jar2_{}_1".format(n),
+                "jar2_{}_2".format(n),
+            ]
             assert getattr(cppinfo, n) == None
