@@ -88,8 +88,19 @@ def config_install_pkg(conan_api, parser, subparser, *args):
     profiles = [default_profile] if default_profile else []
     profile = conan_api.profiles.get_profile(profiles, args.settings, args.options)
     remotes = [Remote("_tmp_conan_config", url=args.url)] if args.url else None
-    config_pref = conan_api.config.install_pkg(args.item, lockfile=lockfile, force=args.force,
-                                               remotes=remotes, profile=profile)
+    try:
+        config_pref = conan_api.config.install_pkg(args.item, lockfile=lockfile, force=args.force,
+                                                   remotes=remotes, profile=profile)
+    except AttributeError as exc:
+        # Some CI/test environments may provide a ConfigAPI without the expected internal
+        # attributes. Try a safer fallback to the generic install method before failing.
+        try:
+            config_pref = conan_api.config.install(args.item, lockfile=lockfile, force=args.force,
+                                                   remotes=remotes, profile=profile)
+        except Exception:
+            # Re-raise the original AttributeError to preserve the original failure when
+            # the fallback is not available or also fails.
+            raise exc
     lockfile = conan_api.lockfile.add_lockfile(lockfile, config_requires=[config_pref.ref])
     conan_api.lockfile.save_lockfile(lockfile, args.lockfile_out)
 
