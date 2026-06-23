@@ -36,8 +36,10 @@ def test_extra_flags_via_conf(os_):
     client.save({"conanfile.py": conanfile,
                  "profile": profile})
     client.run("install . --profile:build=profile --profile:host=profile")
+    # Determine the generated toolchain script extension from the execution platform,
+    # not from the profile 'os_' value (which describes the target/host OS).
     toolchain = client.load(
-        "conangnutoolchain{}".format('.bat' if os_ == "Windows" else '.sh'))
+        "conangnutoolchain{}".format('.bat' if os.name == "nt" else '.sh'))
     if os_ == "Windows":
         assert 'set "CPPFLAGS=%CPPFLAGS% -DNDEBUG -DDEF1 -DDEF2"' in toolchain
         assert 'set "CXXFLAGS=%CXXFLAGS% -O3 --flag1 --flag2"' in toolchain
@@ -499,9 +501,9 @@ def test_conf_extra_apple_flags(toolchain):
     c.save({"host": host})
     c.run("install . -pr:a host")
     tc = c.load(f)
-    assert 'CXXFLAGS="$CXXFLAGS -fno-objc-arc -fvisibility=hidden -fvisibility-inlines-hidden"' in tc
-    assert 'CFLAGS="$CFLAGS -fno-objc-arc -fvisibility=hidden -fvisibility-inlines-hidden"' in tc
-    assert 'LDFLAGS="$LDFLAGS -fno-objc-arc -fvisibility=hidden -fvisibility-inlines-hidden"' in tc
+    assert 'export CXXFLAGS="$CXXFLAGS -fno-objc-arc -fvisibility=hidden -fvisibility-inlines-hidden"' in tc
+    assert 'export CFLAGS="$CFLAGS -fno-objc-arc -fvisibility=hidden -fvisibility-inlines-hidden"' in tc
+    assert 'export LDFLAGS="$LDFLAGS -fno-objc-arc -fvisibility=hidden -fvisibility-inlines-hidden"' in tc
 
 
 def test_toolchain_crossbuild_to_android():

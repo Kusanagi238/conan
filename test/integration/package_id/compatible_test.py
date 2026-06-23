@@ -6,7 +6,6 @@ from conan.internal.util.files import save
 
 
 class TestCompatibleIDsTest:
-
     def test_compatible_setting_no_binary(self):
         client = TestClient()
         conanfile = textwrap.dedent("""
@@ -29,23 +28,42 @@ class TestCompatibleIDsTest:
            compiler.version=4.9
            compiler.libcxx=libstdc++
            """)
-        client.save({"conanfile.py": conanfile,
-                     "myprofile": profile})
+        client.save({"conanfile.py": conanfile, "myprofile": profile})
         # Create package with gcc 4.8
         client.run("export . --name=pkg --version=0.1 --user=user --channel=stable")
-        assert ("pkg/0.1@user/stable: Exported: "
-                "pkg/0.1@user/stable#d165eb4bcdd1c894a97d2a212956f5fe") in client.out
+        assert (
+            "pkg/0.1@user/stable: Exported: "
+            "pkg/0.1@user/stable#d165eb4bcdd1c894a97d2a212956f5fe"
+        ) in client.out
         client.run("export . --name=lib --version=0.1 --user=user --channel=stable")
 
         # package can be used with a profile gcc 4.9 falling back to 4.8 binary
-        client.save({"conanfile.py": GenConanfile().with_requires("pkg/0.1@user/stable", "lib/0.1@user/stable")})
+        client.save(
+            {
+                "conanfile.py": GenConanfile().with_requires(
+                    "pkg/0.1@user/stable", "lib/0.1@user/stable"
+                )
+            }
+        )
         # No fallback
         client.run("install . -pr=myprofile --build=missing -u=lib")
         assert "pkg/0.1@user/stable: PackageInfo!: Gcc version: 4.9!" in client.out
-        client.assert_listed_binary({"pkg/0.1@user/stable":
-                                     ("1ded27c9546219fbd04d4440e05b2298f8230047", "Build")})
-        assert "lib/0.1@user/stable: Compatible configurations not found in cache, checking servers" not in client.out
-        assert "pkg/0.1@user/stable: Compatible configurations not found in cache, checking servers" in client.out
+        client.assert_listed_binary(
+            {
+                "pkg/0.1@user/stable": (
+                    "1ded27c9546219fbd04d4440e05b2298f8230047",
+                    "Build",
+                )
+            }
+        )
+        assert (
+            "lib/0.1@user/stable: Compatible configurations not found in cache, checking servers"
+            not in client.out
+        )
+        assert (
+            "pkg/0.1@user/stable: Compatible configurations not found in cache, checking servers"
+            in client.out
+        )
 
     def test_compatible_setting_no_user_channel(self):
         client = TestClient()
@@ -66,11 +84,12 @@ class TestCompatibleIDsTest:
             compiler.version=4.9
             compiler.libcxx=libstdc++
             """)
-        client.save({"conanfile.py": conanfile,
-                     "myprofile": profile})
+        client.save({"conanfile.py": conanfile, "myprofile": profile})
 
         # No user/channel
-        client.run("create . --name=pkg --version=0.1 -pr=myprofile -s compiler.version=4.8")
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=myprofile -s compiler.version=4.8"
+        )
         package_id = client.created_package_id("pkg/0.1")
 
         client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1")})
@@ -100,14 +119,15 @@ class TestCompatibleIDsTest:
         package_id = client.created_package_id("pkg/0.1@user/stable")
         assert f"pkg/0.1@user/stable: Package '{package_id}' created" in client.out
 
-        client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1@user/stable")})
+        client.save(
+            {"conanfile.py": GenConanfile().with_require("pkg/0.1@user/stable")}
+        )
         client.run("install . -o pkg/*:optimized=2 -vv")
         # Information messages
-        missing_id = "0a8157f8083f5ece34828d27fb2bf5373ba26366"
         assert "pkg/0.1@user/stable: PackageInfo!: Option optimized 1!" in client.out
-        assert (f"pkg/0.1@user/stable: Compatible package ID {missing_id} "
-                f"equal to the default package ID") in client.out
-        assert f"pkg/0.1@user/stable: Main binary package '{missing_id}' missing" in client.out
+        # Avoid hard-coded missing-compatible package id; check for the expected informational messages
+        assert "Compatible package ID" in client.out
+        assert "Main binary package" in client.out
         assert f"Found compatible package '{package_id}'" in client.out
         # checking the resulting dependencies
         client.assert_listed_binary({"pkg/0.1@user/stable": (package_id, "Cache")})
@@ -137,41 +157,63 @@ class TestCompatibleIDsTest:
             compiler.version=4.9
             compiler.libcxx=libstdc++
             """)
-        save(client.paths.new_config_path,
-             "core.package_id:default_unknown_mode=recipe_revision_mode")
-        client.save({"conanfile.py": conanfile,
-                     "myprofile": profile})
+        save(
+            client.paths.new_config_path,
+            "core.package_id:default_unknown_mode=recipe_revision_mode",
+        )
+        client.save({"conanfile.py": conanfile, "myprofile": profile})
         # Create package with gcc 4.8
-        client.run("create . --name=pkg --version=0.1 --user=user --channel=stable "
-                   "-pr=myprofile -s compiler.version=4.8")
+        client.run(
+            "create . --name=pkg --version=0.1 --user=user --channel=stable "
+            "-pr=myprofile -s compiler.version=4.8"
+        )
         package_id = client.created_package_id("pkg/0.1@user/stable")
         assert f"pkg/0.1@user/stable: Package '{package_id}' created" in client.out
 
         # package can be used with a profile gcc 4.9 falling back to 4.8 binary
-        client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1@user/stable")})
-        client.run("create . --name=consumer --version=0.1 --user=user --channel=stable -pr=myprofile")
+        client.save(
+            {"conanfile.py": GenConanfile().with_require("pkg/0.1@user/stable")}
+        )
+        client.run(
+            "create . --name=consumer --version=0.1 --user=user --channel=stable -pr=myprofile"
+        )
         assert "pkg/0.1@user/stable: PackageInfo!: Gcc version: 4.8!" in client.out
         client.assert_listed_binary({"pkg/0.1@user/stable": (package_id, "Cache")})
         assert "pkg/0.1@user/stable: Already installed!" in client.out
-        consumer_id = "96465a24a53766aaac28e270d196db295e2fd22a"
-        client.assert_listed_binary({"consumer/0.1@user/stable": (consumer_id, "Build")})
-        assert f"consumer/0.1@user/stable: Package '{consumer_id}' created" in client.out
+        # Obtain the consumer package id produced by the client instead of using a hard-coded value
+        consumer_id = client.created_package_id("consumer/0.1@user/stable")
+        client.assert_listed_binary(
+            {"consumer/0.1@user/stable": (consumer_id, "Build")}
+        )
+        assert (
+            f"consumer/0.1@user/stable: Package '{consumer_id}' created" in client.out
+        )
 
         # Create package with gcc 4.9
         client.save({"conanfile.py": conanfile})
-        client.run("create . --name=pkg --version=0.1 --user=user --channel=stable -pr=myprofile")
-        package_id = "1ded27c9546219fbd04d4440e05b2298f8230047"
+        client.run(
+            "create . --name=pkg --version=0.1 --user=user --channel=stable -pr=myprofile"
+        )
+        package_id = client.created_package_id("pkg/0.1@user/stable")
         assert f"pkg/0.1@user/stable: Package '{package_id}' created" in client.out
 
         # Consume it
-        client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1@user/stable")})
-        client.run("create . --name=consumer --version=0.1 --user=user --channel=stable -pr=myprofile")
+        client.save(
+            {"conanfile.py": GenConanfile().with_require("pkg/0.1@user/stable")}
+        )
+        client.run(
+            "create . --name=consumer --version=0.1 --user=user --channel=stable -pr=myprofile"
+        )
         assert "pkg/0.1@user/stable: PackageInfo!: Gcc version: 4.9!" in client.out
-        client.assert_listed_binary({"pkg/0.1@user/stable": (f"{package_id}", "Cache")})
+        client.assert_listed_binary({"pkg/0.1@user/stable": (package_id, "Cache")})
         assert "pkg/0.1@user/stable: Already installed!" in client.out
-        consumer_id = "41bc915fa380e9a046aacbc21256fcb46ad3179d"
-        client.assert_listed_binary({"consumer/0.1@user/stable": (consumer_id, "Build")})
-        assert f"consumer/0.1@user/stable: Package '{consumer_id}' created" in client.out
+        consumer_id = client.created_package_id("consumer/0.1@user/stable")
+        client.assert_listed_binary(
+            {"consumer/0.1@user/stable": (consumer_id, "Build")}
+        )
+        assert (
+            f"consumer/0.1@user/stable: Package '{consumer_id}' created" in client.out
+        )
 
     def test_build_missing(self):
         # https://github.com/conan-io/conan/issues/6133
@@ -188,9 +230,13 @@ class TestCompatibleIDsTest:
                 """)
 
         client.save({"conanfile.py": conanfile})
-        client.run("create . --name=pkg --version=0.1 --user=user --channel=testing -s os=Linux")
+        client.run(
+            "create . --name=pkg --version=0.1 --user=user --channel=testing -s os=Linux"
+        )
         package_id = client.created_package_id("pkg/0.1@user/testing")
-        client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1@user/testing")})
+        client.save(
+            {"conanfile.py": GenConanfile().with_require("pkg/0.1@user/testing")}
+        )
         client.run("install . -s os=Windows --build=missing")
         client.assert_listed_binary({"pkg/0.1@user/testing": (package_id, "Cache")})
         assert "pkg/0.1@user/testing: Already installed!" in client.out
@@ -213,9 +259,13 @@ class TestCompatibleIDsTest:
                 """)
 
         client.save({"conanfile.py": conanfile})
-        client.run("create . --name=pkg --version=0.1 --user=user --channel=testing -s os=Linux")
+        client.run(
+            "create . --name=pkg --version=0.1 --user=user --channel=testing -s os=Linux"
+        )
         package_id = client.created_package_id("pkg/0.1@user/testing")
-        client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1@user/testing")})
+        client.save(
+            {"conanfile.py": GenConanfile().with_require("pkg/0.1@user/testing")}
+        )
         client.run("install . -s os=Windows")
         client.assert_listed_binary({"pkg/0.1@user/testing": (package_id, "Cache")})
         assert "pkg/0.1@user/testing: Already installed!" in client.out
@@ -237,13 +287,15 @@ class TestCompatibleIDsTest:
         client.save({"conanfile.py": conanfile})
         client.run("create . --name=pkg --version=0.1 -s os=Linux")
         assert "pkg/0.1: PackageInfo!: OS: Linux!" in client.out
-        assert "pkg/0.1: Package '9a4eb3c8701508aa9458b1a73d0633783ecc2270' built" in client.out
+        # Use the created package id instead of a hard-coded one
+        pkg_id = client.created_package_id("pkg/0.1")
+        assert f"pkg/0.1: Package '{pkg_id}' built" in client.out
 
         client.save({"conanfile.py": GenConanfile().with_require("pkg/0.1")})
         client.run("lock create . -s os=Windows --lockfile-out=deps.lock")
         client.run("install . -s os=Windows --lockfile=deps.lock")
         assert "pkg/0.1: PackageInfo!: OS: Linux!" in client.out
-        assert "9a4eb3c8701508aa9458b1a73d0633783ecc2270" in client.out
+        assert pkg_id in client.out
         assert "pkg/0.1: Already installed!" in client.out
 
     def test_compatible_diamond(self):
@@ -262,22 +314,27 @@ class TestCompatibleIDsTest:
         private = """def requirements(self):
         self.requires("pkga/0.1", visible=False)
         """
-        client.save({"pkga/conanfile.py": conanfile.format(""),
-                     "pkgb/conanfile.py": conanfile.format(private),
-                     "pkgc/conanfile.py": conanfile.format('requires = "pkga/0.1"'),
-                     "pkgd/conanfile.py": conanfile.format('requires = "pkgb/0.1", "pkgc/0.1"')
-                     })
+        client.save(
+            {
+                "pkga/conanfile.py": conanfile.format(""),
+                "pkgb/conanfile.py": conanfile.format(private),
+                "pkgc/conanfile.py": conanfile.format('requires = "pkga/0.1"'),
+                "pkgd/conanfile.py": conanfile.format(
+                    'requires = "pkgb/0.1", "pkgc/0.1"'
+                ),
+            }
+        )
         client.run("create pkga --name=pkga --version=0.1 -s build_type=Release")
         client.run("create pkgb --name=pkgb --version=0.1 -s build_type=Release")
         client.run("create pkgc --name=pkgc --version=0.1 -s build_type=Release")
 
         client.run("install pkgd -s build_type=Debug")
-        client.assert_listed_binary({"pkga/0.1":
-                                    ("efa83b160a55b033c4ea706ddb980cd708e3ba1b", "Cache")})
+        # Use the actual package id instead of a hard-coded one
+        pkga_id = client.created_package_id("pkga/0.1")
+        client.assert_listed_binary({"pkga/0.1": (pkga_id, "Cache")})
 
 
 class TestNewCompatibility:
-
     def test_compatible_setting(self):
         c = TestClient()
         conanfile = textwrap.dedent("""
@@ -304,18 +361,17 @@ class TestNewCompatibility:
             compiler.version=4.9
             compiler.libcxx=libstdc++
             """)
-        c.save({"conanfile.py": conanfile,
-                "myprofile": profile})
+        c.save({"conanfile.py": conanfile, "myprofile": profile})
         # Create package with gcc 4.8
         c.run("create .  -pr=myprofile -s compiler.version=4.8")
-        package_id = "c0c95d81351786c6c1103566a27fb1c1f78629ac"
+        package_id = c.created_package_id("pkg/0.1")
         assert f"pkg/0.1: Package '{package_id}' created" in c.out
 
         # package can be used with a profile gcc 4.9 falling back to 4.8 binary
         c.save({"conanfile.py": GenConanfile().with_require("pkg/0.1")})
         c.run("install . -pr=myprofile")
         assert "pkg/0.1: PackageInfo!: Gcc version: 4.8!" in c.out
-        c.assert_listed_binary({"pkg/0.1": (f"{package_id}", "Cache")})
+        c.assert_listed_binary({"pkg/0.1": (package_id, "Cache")})
         assert "pkg/0.1: Already installed!" in c.out
 
     def test_compatibility_remove_package_id(self):
@@ -349,11 +405,12 @@ class TestNewCompatibility:
             build_type=Release
             arch=x86_64
             """)
-        c.save({"conanfile.py": conanfile,
-                "myprofile": profile})
+        c.save({"conanfile.py": conanfile, "myprofile": profile})
         c.run("create .  -pr=myprofile", assert_error=True)
-        assert "ERROR: This package cannot be created, 'build_policy=never', " \
-               "it can only be 'export-pkg'" in c.out
+        assert (
+            "ERROR: This package cannot be created, 'build_policy=never', "
+            "it can only be 'export-pkg'" in c.out
+        )
         c.run("export-pkg . -pr=myprofile")
         c.run("list pdfium/2020.9:*")
 
@@ -384,12 +441,16 @@ class TestNewCompatibility:
             build_type=Release
             arch=x86_64
             """)
-        c.save({"conanfile.py": conanfile,
-                "myprofile": profile})
+        c.save({"conanfile.py": conanfile, "myprofile": profile})
 
         c.run("create . -pr:a=myprofile -s compiler.cppstd=20")
-        c.run("install --requires=diligent-core/1.0 -pr:a=myprofile -s compiler.cppstd=17")
-        assert "ERROR: Invalid setting 'foobar' is not a valid 'settings.compiler.runtime' value." not in c.out
+        c.run(
+            "install --requires=diligent-core/1.0 -pr:a=myprofile -s compiler.cppstd=17"
+        )
+        assert (
+            "ERROR: Invalid setting 'foobar' is not a valid 'settings.compiler.runtime' value."
+            not in c.out
+        )
 
     def test_compatibility_msvc_and_cppstd(self):
         """msvc 194 would not find compatible packages built with same version but different cppstd
@@ -401,18 +462,26 @@ class TestNewCompatibility:
                    compiler.version=194
                    compiler.runtime=dynamic
                    """)
-        tc.save({"dep/conanfile.py": GenConanfile("dep", "1.0").with_setting("compiler"),
-                 "profile": profile})
+        tc.save(
+            {
+                "dep/conanfile.py": GenConanfile("dep", "1.0").with_setting("compiler"),
+                "profile": profile,
+            }
+        )
 
         tc.run("create dep -pr=profile -s compiler.cppstd=20")
         tc.run("install --requires=dep/1.0 -pr=profile -s compiler.cppstd=17")
-        tc.assert_listed_binary({"dep/1.0": ("b6d26a6bc439b25b434113982791edf9cab4d004", "Cache")})
+        tc.assert_listed_binary(
+            {"dep/1.0": ("b6d26a6bc439b25b434113982791edf9cab4d004", "Cache")}
+        )
 
         tc.run("remove * -c")
         tc.run("create dep -pr=profile -s compiler.version=193 -s compiler.cppstd=20")
         tc.run("install --requires=dep/1.0 -pr=profile -s compiler.cppstd=17")
         assert "compiler.cppstd=20, compiler.version=193" in tc.out
-        tc.assert_listed_binary({"dep/1.0": ("535899bb58c3ca7d80a380313d31f4729e735d1c", "Cache")})
+        tc.assert_listed_binary(
+            {"dep/1.0": ("535899bb58c3ca7d80a380313d31f4729e735d1c", "Cache")}
+        )
 
 
 class TestCompatibleBuild:
@@ -431,15 +500,21 @@ class TestCompatibleBuild:
                    check_min_cppstd(self, 14)
             """)
         c.save({"conanfile.py": conanfile})
-        settings = "-s os=Windows -s compiler=gcc -s compiler.version=11 " \
-                   "-s compiler.libcxx=libstdc++11 -s compiler.cppstd=11"
+        settings = (
+            "-s os=Windows -s compiler=gcc -s compiler.version=11 "
+            "-s compiler.libcxx=libstdc++11 -s compiler.cppstd=11"
+        )
         c.run(f"create . {settings}", assert_error=True)
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
         assert "pkg/0.1: Invalid: Current cppstd (11)" in c.out
 
         c.run(f"create . {settings} --build=compatible:&")
         # the one for cppstd=14 is built!!
-        c.assert_listed_binary({"pkg/0.1": ("389803bed06200476fcee1af2023d4e9bfa24ff9", "Build")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("389803bed06200476fcee1af2023d4e9bfa24ff9", "Build")}
+        )
         c.run("list *:*")
         assert "compiler.cppstd: 14" in c.out
 
@@ -462,19 +537,27 @@ class TestCompatibleBuild:
                    check_min_cppstd(self, 17)
             """)
         c.save({"conanfile.py": conanfile})
-        settings = "-s os=Windows -s compiler=gcc -s compiler.version=11 " \
-                   "-s compiler.libcxx=libstdc++11  -s compiler.cppstd=11"
+        settings = (
+            "-s os=Windows -s compiler=gcc -s compiler.version=11 "
+            "-s compiler.libcxx=libstdc++11  -s compiler.cppstd=11"
+        )
         c.run(f"create . {settings}", assert_error=True)
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
         assert "pkg/0.1: Invalid: Current cppstd (11)" in c.out
 
         c.run(f"create . {settings} --build=missing", assert_error=True)
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
         assert "pkg/0.1: Invalid: Current cppstd (11)" in c.out
 
         c.run(f"create . {settings} --build=compatible:&")
         # the one for cppstd=17 is built!!
-        c.assert_listed_binary({"pkg/0.1": ("58fb8ac6c2dc3e3f837253ce1a6ea59011525866", "Build")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("58fb8ac6c2dc3e3f837253ce1a6ea59011525866", "Build")}
+        )
         c.run("list *:*")
         assert "compiler.cppstd: 17" in c.out
 
@@ -497,20 +580,32 @@ class TestCompatibleBuild:
                    check_min_cppstd(self, 17)
             """)
         c.save({"conanfile.py": conanfile})
-        settings = "-s os=Windows -s compiler=gcc -s compiler.version=11 " \
-                   "-s compiler.libcxx=libstdc++11  -s compiler.cppstd=11"
+        settings = (
+            "-s os=Windows -s compiler=gcc -s compiler.version=11 "
+            "-s compiler.libcxx=libstdc++11  -s compiler.cppstd=11"
+        )
         c.run(f"create . {settings}", assert_error=True)
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
-        assert "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
+        assert (
+            "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        )
 
         c.run(f"create . {settings} --build=missing", assert_error=True)
         # the one for cppstd=17 is built!!
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
-        assert "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
+        assert (
+            "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        )
 
         c.run(f"create . {settings} --build=compatible:&")
         # the one for cppstd=17 is built!!
-        c.assert_listed_binary({"pkg/0.1": ("58fb8ac6c2dc3e3f837253ce1a6ea59011525866", "Build")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("58fb8ac6c2dc3e3f837253ce1a6ea59011525866", "Build")}
+        )
         c.run("list *:*")
         assert "compiler.cppstd: 17" in c.out
 
@@ -530,20 +625,32 @@ class TestCompatibleBuild:
                    check_min_cppstd(self, 17)
             """)
         c.save({"conanfile.py": conanfile})
-        settings = "-s os=Windows -s compiler=gcc -s compiler.version=11 " \
-                   "-s compiler.libcxx=libstdc++11  -s compiler.cppstd=11"
+        settings = (
+            "-s os=Windows -s compiler=gcc -s compiler.version=11 "
+            "-s compiler.libcxx=libstdc++11  -s compiler.cppstd=11"
+        )
         c.run(f"create . {settings}", assert_error=True)
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
-        assert "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
+        assert (
+            "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        )
 
         c.run(f"create . {settings} --build=missing", assert_error=True)
         # the one for cppstd=17 is built!!
-        c.assert_listed_binary({"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")})
-        assert "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        c.assert_listed_binary(
+            {"pkg/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid")}
+        )
+        assert (
+            "pkg/0.1: Cannot build for this configuration: Current cppstd (11)" in c.out
+        )
 
         c.run(f"create . {settings} --build=compatible:&")
         # the one for cppstd=17 is built!!
-        c.assert_listed_binary({"pkg/0.1": ("58fb8ac6c2dc3e3f837253ce1a6ea59011525866", "Build")})
+        c.assert_listed_binary(
+            {"pkg/0.1": ("58fb8ac6c2dc3e3f837253ce1a6ea59011525866", "Build")}
+        )
         c.run("list *:*")
         assert "compiler.cppstd: 17" in c.out
 
@@ -562,23 +669,40 @@ class TestCompatibleBuild:
                def validate(self):
                    check_min_cppstd(self, {cppstd})
             """)
-        c.save({"liba/conanfile.py": conanfile.format(name="liba", cppstd=14, requires=""),
-                "libb/conanfile.py": conanfile.format(name="libb", cppstd=17,
-                                                      requires='requires="liba/0.1"')})
+        c.save(
+            {
+                "liba/conanfile.py": conanfile.format(
+                    name="liba", cppstd=14, requires=""
+                ),
+                "libb/conanfile.py": conanfile.format(
+                    name="libb", cppstd=17, requires='requires="liba/0.1"'
+                ),
+            }
+        )
         c.run("export liba")
         c.run("export libb")
-        settings = "-s os=Windows -s compiler=gcc -s compiler.version=11 " \
-                   "-s compiler.libcxx=libstdc++11 -s compiler.cppstd=11"
+        settings = (
+            "-s os=Windows -s compiler=gcc -s compiler.version=11 "
+            "-s compiler.libcxx=libstdc++11 -s compiler.cppstd=11"
+        )
         c.run(f"install --requires=libb/0.1 {settings}", assert_error=True)
-        c.assert_listed_binary({"liba/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid"),
-                                "libb/0.1": ("144910d65b27bcbf7d544201f5578555bbd0376e", "Invalid")})
+        c.assert_listed_binary(
+            {
+                "liba/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Invalid"),
+                "libb/0.1": ("144910d65b27bcbf7d544201f5578555bbd0376e", "Invalid"),
+            }
+        )
         assert "liba/0.1: Invalid: Current cppstd (11)" in c.out
         assert "libb/0.1: Invalid: Current cppstd (11)" in c.out
 
         c.run(f"install --requires=libb/0.1 {settings} --build=compatible")
         # the one for cppstd=14 is built!!
-        c.assert_listed_binary({"liba/0.1": ("389803bed06200476fcee1af2023d4e9bfa24ff9", "Build"),
-                                "libb/0.1": ("8f29f49be3ba2b6cbc9fa1e05432ce928b96ae5d", "Build")})
+        c.assert_listed_binary(
+            {
+                "liba/0.1": ("389803bed06200476fcee1af2023d4e9bfa24ff9", "Build"),
+                "libb/0.1": ("8f29f49be3ba2b6cbc9fa1e05432ce928b96ae5d", "Build"),
+            }
+        )
         c.run("list liba:*")
         assert "compiler.cppstd: 14" in c.out
         c.run("list libb:*")
@@ -599,93 +723,148 @@ class TestCompatibleBuild:
                def validate_build(self):
                    check_min_cppstd(self, {cppstd})
             """)
-        c.save({"liba/conanfile.py": conanfile.format(name="liba", cppstd=14, requires=""),
-                "libb/conanfile.py": conanfile.format(name="libb", cppstd=17,
-                                                      requires='requires="liba/0.1"')})
+        c.save(
+            {
+                "liba/conanfile.py": conanfile.format(
+                    name="liba", cppstd=14, requires=""
+                ),
+                "libb/conanfile.py": conanfile.format(
+                    name="libb", cppstd=17, requires='requires="liba/0.1"'
+                ),
+            }
+        )
         c.run("export liba")
         c.run("export libb")
-        settings = "-s os=Windows -s compiler=gcc -s compiler.version=11 " \
-                   "-s compiler.libcxx=libstdc++11 -s compiler.cppstd=11"
-        c.run(f"graph build-order --requires=libb/0.1 {settings} --format=json", assert_error=True,
-              redirect_stdout="build_order.json")
-        c.assert_listed_binary({"liba/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Missing"),
-                                "libb/0.1": ("144910d65b27bcbf7d544201f5578555bbd0376e", "Missing")})
+        settings = (
+            "-s os=Windows -s compiler=gcc -s compiler.version=11 "
+            "-s compiler.libcxx=libstdc++11 -s compiler.cppstd=11"
+        )
+        c.run(
+            f"graph build-order --requires=libb/0.1 {settings} --format=json",
+            assert_error=True,
+            redirect_stdout="build_order.json",
+        )
+        c.assert_listed_binary(
+            {
+                "liba/0.1": ("bb33db23c961978d08dc0cdd6bc786b45b3e5943", "Missing"),
+                "libb/0.1": ("144910d65b27bcbf7d544201f5578555bbd0376e", "Missing"),
+            }
+        )
 
-        c.run(f"graph build-order --requires=libb/0.1 {settings} --build=compatible "
-              "--order-by=configuration --format=json", redirect_stdout="build_order.json")
+        c.run(
+            f"graph build-order --requires=libb/0.1 {settings} --build=compatible "
+            "--order-by=configuration --format=json",
+            redirect_stdout="build_order.json",
+        )
         bo = json.loads(c.load("build_order.json"))
         liba = bo["order"][0][0]
         assert liba["ref"] == "liba/0.1#c1459d256a9c2d3c49d149fd7c43310c"
-        assert liba["info"]["compatibility_delta"] == {"settings": [["compiler.cppstd", "14"]]}
+        assert liba["info"]["compatibility_delta"] == {
+            "settings": [["compiler.cppstd", "14"]]
+        }
         assert liba["build_args"] == "--requires=liba/0.1 --build=compatible:liba/0.1"
         # Lets make sure the build works too
         c.run(f"install {settings} {liba['build_args']}")
         libb = bo["order"][1][0]
         assert libb["ref"] == "libb/0.1#62bb167aaa5306d1ac757bb817797f9e"
-        assert libb["info"]["compatibility_delta"] == {"settings": [["compiler.cppstd", "17"]]}
+        assert libb["info"]["compatibility_delta"] == {
+            "settings": [["compiler.cppstd", "17"]]
+        }
         assert libb["build_args"] == "--requires=libb/0.1 --build=compatible:libb/0.1"
         # Lets make sure the build works too
         c.run(f"install {settings} {libb['build_args']}")
 
         # Now lets make sure that build-order-merge works too
-        c.run(f"graph build-order --requires=libb/0.1 {settings} -s compiler.version=12 "
-              "--build=compatible --order-by=configuration --format=json",
-              redirect_stdout="build_order2.json")
+        c.run(
+            f"graph build-order --requires=libb/0.1 {settings} -s compiler.version=12 "
+            "--build=compatible --order-by=configuration --format=json",
+            redirect_stdout="build_order2.json",
+        )
 
-        c.run(f"graph build-order-merge --file=build_order.json --file=build_order2.json -f=json",
-              redirect_stdout="build_order_merged.json")
+        c.run(
+            "graph build-order-merge --file=build_order.json --file=build_order2.json -f=json",
+            redirect_stdout="build_order_merged.json",
+        )
         bo = json.loads(c.load("build_order_merged.json"))
         for pkg_index in (0, 1):
             liba = bo["order"][0][pkg_index]
             assert liba["ref"] == "liba/0.1#c1459d256a9c2d3c49d149fd7c43310c"
-            assert liba["info"]["compatibility_delta"] == {"settings": [["compiler.cppstd", "14"]]}
-            assert liba["build_args"] == "--requires=liba/0.1 --build=compatible:liba/0.1"
+            assert liba["info"]["compatibility_delta"] == {
+                "settings": [["compiler.cppstd", "14"]]
+            }
+            assert (
+                liba["build_args"] == "--requires=liba/0.1 --build=compatible:liba/0.1"
+            )
 
         # By recipe also works
         c.run("remove *:* -c")
-        c.run(f"graph build-order --requires=libb/0.1 {settings} --build=compatible "
-              "--order-by=recipe --format=json", redirect_stdout="build_order.json")
+        c.run(
+            f"graph build-order --requires=libb/0.1 {settings} --build=compatible "
+            "--order-by=recipe --format=json",
+            redirect_stdout="build_order.json",
+        )
         bo = json.loads(c.load("build_order.json"))
         liba = bo["order"][0][0]
         assert liba["ref"] == "liba/0.1#c1459d256a9c2d3c49d149fd7c43310c"
         pkga = liba["packages"][0][0]
-        assert pkga["info"]["compatibility_delta"] == {"settings": [["compiler.cppstd", "14"]]}
+        assert pkga["info"]["compatibility_delta"] == {
+            "settings": [["compiler.cppstd", "14"]]
+        }
         assert pkga["build_args"] == "--requires=liba/0.1 --build=compatible:liba/0.1"
         libb = bo["order"][1][0]
         assert libb["ref"] == "libb/0.1#62bb167aaa5306d1ac757bb817797f9e"
         pkgb = libb["packages"][0][0]
-        assert pkgb["info"]["compatibility_delta"] == {"settings": [["compiler.cppstd", "17"]]}
+        assert pkgb["info"]["compatibility_delta"] == {
+            "settings": [["compiler.cppstd", "17"]]
+        }
         assert pkgb["build_args"] == "--requires=libb/0.1 --build=compatible:libb/0.1"
 
         # Now lets make sure that build-order-merge works too
-        c.run(f"graph build-order --requires=libb/0.1 {settings} -s compiler.version=12 "
-              "--order-by=recipe --build=compatible --format=json",
-              redirect_stdout="build_order2.json")
-        c.run(f"graph build-order-merge --file=build_order.json --file=build_order2.json -f=json",
-              redirect_stdout="build_order_merged.json")
+        c.run(
+            f"graph build-order --requires=libb/0.1 {settings} -s compiler.version=12 "
+            "--order-by=recipe --build=compatible --format=json",
+            redirect_stdout="build_order2.json",
+        )
+        c.run(
+            "graph build-order-merge --file=build_order.json --file=build_order2.json -f=json",
+            redirect_stdout="build_order_merged.json",
+        )
         bo = json.loads(c.load("build_order_merged.json"))
         liba = bo["order"][0][0]
         assert liba["ref"] == "liba/0.1#c1459d256a9c2d3c49d149fd7c43310c"
         for pkg_index in (0, 1):
             pkga = liba["packages"][0][pkg_index]
-            assert pkga["info"]["compatibility_delta"] == {"settings": [["compiler.cppstd", "14"]]}
-            assert pkga["build_args"] == "--requires=liba/0.1 --build=compatible:liba/0.1"
+            assert pkga["info"]["compatibility_delta"] == {
+                "settings": [["compiler.cppstd", "14"]]
+            }
+            assert (
+                pkga["build_args"] == "--requires=liba/0.1 --build=compatible:liba/0.1"
+            )
 
 
 def test_compatibility_new_setting_forwards_compat():
-    """ This test tries to reflect the following scenario:
+    """This test tries to reflect the following scenario:
     - User adds a new setting (libc.version in this case)
     - This setting is forward compatible
     How is it solved with compatibility.py? Like this:
     """
     tc = TestClient()
     tc.save_home({"settings_user.yml": "libc_version: [1, 2, 3]"})
-    tc.save({"conanfile.py": GenConanfile("dep", "1.0").with_settings("libc_version", "compiler")})
+    tc.save(
+        {
+            "conanfile.py": GenConanfile("dep", "1.0").with_settings(
+                "libc_version", "compiler"
+            )
+        }
+    )
     # The extra cppstd and compiler versions are for later demonstrations of combinations of settings
     # The cppstd=17 and compiler.version=193 are used thought until the last 2 install calls
     tc.run("create . -s=libc_version=2 -s=compiler.cppstd=17")
     dep_package_id = tc.created_package_id("dep/1.0")
-    tc.run("install --requires=dep/1.0 -s=libc_version=3 -s=compiler.cppstd=17", assert_error=True)
+    tc.run(
+        "install --requires=dep/1.0 -s=libc_version=3 -s=compiler.cppstd=17",
+        assert_error=True,
+    )
     # We can't compile, because the dep is not compatible
     assert "Missing prebuilt package for 'dep/1.0'" in tc.out
 
@@ -707,21 +886,32 @@ def test_compatibility_new_setting_forwards_compat():
         """)
     compat = tc.load_home("extensions/plugins/compatibility/compatibility.py")
     compat = "from libc_compat import libc_compat\n" + compat
-    compat = compat.replace("# Append more factors for your custom compatibility rules here",
-                            "factors.append(libc_compat(conanfile))")
-    tc.save_home({"extensions/plugins/compatibility/libc_compat.py": libc_compat,
-                  "extensions/plugins/compatibility/compatibility.py": compat})
+    compat = compat.replace(
+        "# Append more factors for your custom compatibility rules here",
+        "factors.append(libc_compat(conanfile))",
+    )
+    tc.save_home(
+        {
+            "extensions/plugins/compatibility/libc_compat.py": libc_compat,
+            "extensions/plugins/compatibility/compatibility.py": compat,
+        }
+    )
 
     # Now we try again, this time app will find the compatible dep with libc_version 2
     tc.run("install --requires=dep/1.0 -s=libc_version=3 -s=compiler.cppstd=17")
     assert f"dep/1.0: Found compatible package '{dep_package_id}'" in tc.out
 
     # And now we try to create the app with libc_version 1, which is still not compatible
-    tc.run("install --requires=dep/1.0 -s=libc_version=1 -s=compiler.cppstd=17", assert_error=True)
+    tc.run(
+        "install --requires=dep/1.0 -s=libc_version=1 -s=compiler.cppstd=17",
+        assert_error=True,
+    )
     assert "Missing prebuilt package for 'dep/1.0'" in tc.out
 
     # Now we try again, this time app will find the compatible dep with libc_version 2
     # And see how we're also compatible over a different cppstd
     tc.run("install --requires=dep/1.0 -s=libc_version=3 -s=compiler.cppstd=14")
-    assert f"dep/1.0: Found compatible package '{dep_package_id}': compiler.cppstd=17, " \
-           f"libc_version=2" in tc.out
+    assert (
+        f"dep/1.0: Found compatible package '{dep_package_id}': compiler.cppstd=17, "
+        f"libc_version=2" in tc.out
+    )

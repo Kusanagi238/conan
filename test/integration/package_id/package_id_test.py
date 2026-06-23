@@ -230,6 +230,7 @@ def test_explicit_implements():
             version = "0.1"
             settings = "os"
             options = {"header_only": [True, False]}
+            implements = ["auto_header_only"]
 
             def package_id(self):
                 if self.package_type == "header-library":

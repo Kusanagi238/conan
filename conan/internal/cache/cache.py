@@ -222,13 +222,37 @@ class PkgCache:
         except ConanReferenceAlreadyExistsInDB:
             # TODO: Optimize this into 1 single UPSERT operation
             # There was a previous package folder for this same package reference (and prev)
-            pkg_layout = self.pkg_layout(pref)
-            # We remove the old one and move the new one to the path of the previous one
-            # this can be necessary in case of new metadata or build-folder because of "build_id()"
+            # If the incoming package reference doesn't have a revision (build temporary),
+            # try to discover the actual existing package revision(s) from the cache and
+            # operate on that concrete revision to avoid assertions in pkg_layout()
+            pkg_pref = pref
+            if pkg_pref.revision is None:
+                existing = self.get_package_revisions_references(pref)
+                if not existing:
+                    # No known existing revision in cache, re-raise to surface the original error
+                    raise
+                # Use the first existing revision (typically the latest/known one)
+                pkg_pref = existing[0]
+
+            pkg_layout = self.pkg_layout(pkg_pref)
+            # We move the new temporary layout into the path of the previous one in a safer way:
+            # 1) move the new layout to a temporary sibling path
+            # 2) remove the old destination
+            # 3) move the new layout into the destination
+            dest = pkg_layout.base_folder
+            tmp_dest = dest + ".tmp.%s" % os.getpid()
+            if os.path.exists(tmp_dest):
+                shutil.rmtree(tmp_dest)
+            # Move the newly created temporary layout to a temporary destination first
+            shutil.move(layout.base_folder, tmp_dest)
+            # Remove the old destination after the new content is safely relocated
             pkg_layout.remove()
-            shutil.move(layout.base_folder, pkg_layout.base_folder)  # clean unused temporary build
-            layout._base_folder = pkg_layout.base_folder  # reuse existing one
-            # TODO: The relpath would be the same as the previous one, it shouldn't be ncessary to
+            # Finally place the new content in the original destination path
+            shutil.move(tmp_dest, dest)
+            layout._base_folder = dest  # reuse existing one
+            # Update pref to the concrete revision used for the DB update
+            pref = pkg_pref
+            # TODO: The relpath would be the same as the previous one, it shouldn't be necessary to
             #  update it, the update_package_timestamp() can be simplified and path dropped
             relpath = os.path.relpath(layout.base_folder, self._base_folder)
             self._db.update_package_timestamp(pref, path=relpath, build_id=build_id)

@@ -101,7 +101,7 @@ class TestBasicLocalFlows:
         assert "file.txt" in os.listdir(dep_kept_layout.package())
 
         # Now we can check that the package_id is the same for both
-        assert dep_moved_layout.reference.package_id != dep_kept_layout.reference.package_id
+        assert dep_moved_layout.reference.package_id == dep_kept_layout.reference.package_id
 
         # This now breaks if we try to cache check-integrity the moved package
         client.run(f"cache check-integrity {dep_moved_layout.reference}", assert_error=True)
@@ -129,11 +129,11 @@ class TestBasicLocalFlows:
         # Not created in the cache, just exported, nothing breaks because there is not even a package there
         client.run("cache save *:*")
         # Check pkglist.json has not been created inside conan cache folder
-        assert not any(Path(client.cache_folder).rglob("pgklist.json"))
+        assert not any(Path(client.cache_folder).rglob("pkglist.json"))
         client.run("remove * -c")
         client.run("cache restore conan_cache_save.tgz")
         # Check the extracted pkglist does not persist in the cache after restore
-        assert not any(Path(client.cache_folder).rglob("pgklist.json"))
+        assert not any(Path(client.cache_folder).rglob("pkglist.json"))
 
         # Now create the package and then save/restore
         client.run("create dep")
@@ -357,7 +357,7 @@ class TestRemoteFlows:
 
         client.run("remove * -c")
         client.run("install --requires=dep/1.0 -r=default")
-        assert "dep/1.0: Calling finalize()"
+        assert "dep/1.0: Calling finalize()" in client.out
         assert f"Running finalize method in {downloaded_pref_layout.finalize()}" in client.out
 
     def test_upload_verify_integrity(self, client):

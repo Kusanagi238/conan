@@ -641,9 +641,11 @@ def test_apple_cmake_osx_sysroot_sdk_mandatory(os, arch, expected_sdk):
     c.folders.set_base_generators(".")
     c._conan_node = Mock()
     c._conan_node.dependencies = []
+    c._conan_node.transitive_deps = []
+    c._conan_node.replaced_requires = []
 
     with pytest.raises(ConanException) as excinfo:
-        CMakeToolchain(c).content()
+        CMakeToolchain(c).content
     assert "Please, specify a suitable value for os.sdk." in str(excinfo.value)
 
 

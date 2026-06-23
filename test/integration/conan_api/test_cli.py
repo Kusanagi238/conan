@@ -11,7 +11,7 @@ from conan.test.utils.tools import redirect_output
 
 
 def test_cli():
-    """ make sure the CLi can be reused
+    """make sure the CLi can be reused
     https://github.com/conan-io/conan/issues/14044
     """
     folder = temp_folder()
@@ -21,7 +21,7 @@ def test_cli():
 
     stdout = RedirectedTestOutput()
     stderr = RedirectedTestOutput()
-    with redirect_output(stderr, stdout):
+    with redirect_output(stdout, stderr):
         cli.run(["list", "*"])
         cli.run(["list", "*"])
         cli2.run(["list", "*"])
@@ -29,7 +29,7 @@ def test_cli():
 
     stdout = RedirectedTestOutput()
     stderr = RedirectedTestOutput()
-    with redirect_output(stderr, stdout):
+    with redirect_output(stdout, stderr):
         cli.run()
     # Running without args shows help, but doesn't error
     assert "Consumer commands" in stdout.getvalue()

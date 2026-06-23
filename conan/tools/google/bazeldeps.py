@@ -373,7 +373,8 @@ class _BazelBUILDGenerator:
         self._components_info = components_info
 
     @property
-    def build_file_pah(self):
+    @property
+    def build_file_path(self):
         """
         Returns the absolute path to the BUILD file created by Conan
         """
@@ -381,11 +382,11 @@ class _BazelBUILDGenerator:
         return folder.replace("\\", "/")
 
     @property
-    def absolute_build_file_pah(self):
+    def absolute_build_file_path(self):
         """
         Returns the absolute path to the BUILD file created by Conan
         """
-        folder = os.path.join(self._conanfile.generators_folder, self.build_file_pah)
+        folder = os.path.join(self._conanfile.generators_folder, self.build_file_path)
         return folder.replace("\\", "/")
 
     @property
@@ -413,7 +414,10 @@ class _BazelBUILDGenerator:
         # Root
         if len(cpp_info.libs) > 1:
             for lib_name in cpp_info.libs:
-                virtual_component = deduced_cpp_info.components.pop(f"_{lib_name}")  # removing it!
+                # Try to remove the virtual component if present, otherwise fallback to deduced_cpp_info
+                virtual_component = deduced_cpp_info.components.pop(f"_{lib_name}", None)
+                if virtual_component is None:
+                    virtual_component = deduced_cpp_info
                 full_libs_info["root"].append(
                     _LibInfo(lib_name, virtual_component, package_folder_path)
                 )
@@ -485,8 +489,8 @@ class _BazelBUILDGenerator:
         context = self._get_context()
         template = Template(self.template, trim_blocks=True, lstrip_blocks=True,
                             undefined=StrictUndefined)
-        content = template.render(context)
-        save(self.build_file_pah, content)
+        content = template.render(**context)
+        save(self.build_file_path, content)
 
 
 class _InfoGenerator:
@@ -520,8 +524,24 @@ class _InfoGenerator:
         """
         dep_ref_name = _get_package_reference_name(self._dep)
         ret = []
-        for req in cpp_info.requires:
-            pkg_ref_name, comp_ref_name = req.split("::") if "::" in req else (dep_ref_name, req)
+        # Guard against None
+        requires = cpp_info.requires or []
+        for req in requires:
+            # Skip invalid entries
+            if not isinstance(req, str):
+                continue
+            req = req.strip()
+            if not req:
+                continue
+            # Split only on the first '::' in case it appears multiple times
+            if "::" in req:
+                pkg_ref_name, comp_ref_name = req.split("::", 1)
+            else:
+                pkg_ref_name, comp_ref_name = dep_ref_name, req
+            pkg_ref_name = pkg_ref_name.strip()
+            comp_ref_name = comp_ref_name.strip()
+            if not comp_ref_name:
+                continue
             prefix = ":"  # Requirements declared in the same BUILD file
             # For instance, dep == "hello/1.0" and req == "other::cmp1" -> hello != other
             if dep_ref_name != pkg_ref_name:

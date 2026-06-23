@@ -15,7 +15,6 @@ from conan.internal.util.files import load, save
 
 
 class TestExportSettings:
-
     def test_export_without_full_reference(self):
         client = TestClient(light=True)
         client.save({"conanfile.py": GenConanfile()})
@@ -44,13 +43,15 @@ class TestExportSettings:
                 exports = "file1.txt"
                 exports_sources = "file2.txt"
             """)
-        client.save({CONANFILE: conanfile,
-                     "file1.txt": "",
-                     "file2.txt": ""})
+        client.save({CONANFILE: conanfile, "file1.txt": "", "file2.txt": ""})
         mode1 = os.stat(os.path.join(client.current_folder, "file1.txt")).st_mode
         mode2 = os.stat(os.path.join(client.current_folder, "file2.txt")).st_mode
-        os.chmod(os.path.join(client.current_folder, "file1.txt"), mode1 & ~stat.S_IWRITE)
-        os.chmod(os.path.join(client.current_folder, "file2.txt"), mode2 & ~stat.S_IWRITE)
+        os.chmod(
+            os.path.join(client.current_folder, "file1.txt"), mode1 & ~stat.S_IWRITE
+        )
+        os.chmod(
+            os.path.join(client.current_folder, "file2.txt"), mode2 & ~stat.S_IWRITE
+        )
 
         client.run("export . --user=lasote --channel=stable")
 
@@ -65,11 +66,13 @@ class TestExportSettings:
         with pytest.raises(IOError):
             save(os.path.join(export_src_path, "file2.txt"), "")
 
-        os.chmod(os.path.join(client.current_folder, "file1.txt"), mode1 | stat.S_IWRITE)
-        os.chmod(os.path.join(client.current_folder, "file2.txt"), mode2 | stat.S_IWRITE)
-        client.save({CONANFILE: conanfile,
-                     "file1.txt": "file1",
-                     "file2.txt": "file2"})
+        os.chmod(
+            os.path.join(client.current_folder, "file1.txt"), mode1 | stat.S_IWRITE
+        )
+        os.chmod(
+            os.path.join(client.current_folder, "file2.txt"), mode2 | stat.S_IWRITE
+        )
+        client.save({CONANFILE: conanfile, "file1.txt": "file1", "file2.txt": "file2"})
         client.run("export . --user=lasote --channel=stable")
 
         layout = client.exported_layout()
@@ -81,11 +84,13 @@ class TestExportSettings:
         client.run("install --requires=hello/1.2@lasote/stable --build=missing")
         assert "hello/1.2@lasote/stable: Generating the package" in client.out
 
-        client.save({CONANFILE: conanfile,
-                     "file1.txt": "",
-                     "file2.txt": ""})
-        os.chmod(os.path.join(client.current_folder, "file1.txt"), mode1 & ~stat.S_IWRITE)
-        os.chmod(os.path.join(client.current_folder, "file2.txt"), mode2 & ~stat.S_IWRITE)
+        client.save({CONANFILE: conanfile, "file1.txt": "", "file2.txt": ""})
+        os.chmod(
+            os.path.join(client.current_folder, "file1.txt"), mode1 & ~stat.S_IWRITE
+        )
+        os.chmod(
+            os.path.join(client.current_folder, "file2.txt"), mode2 & ~stat.S_IWRITE
+        )
         client.run("export . --user=lasote --channel=stable")
 
         layout = client.exported_layout()
@@ -112,8 +117,9 @@ class TestConan(ConanFile):
 """
         for conanfile in (base, base.replace("../*.txt", "../sibling*")):
             client = TestClient(light=True)
-            client.save({"recipe/conanfile.py": conanfile,
-                         "sibling/file.txt": "Hello World!"})
+            client.save(
+                {"recipe/conanfile.py": conanfile, "sibling/file.txt": "Hello World!"}
+            )
             client.current_folder = os.path.join(client.current_folder, "recipe")
             client.run("export . --user=lasote --channel=stable")
             layout = client.exported_layout()
@@ -135,8 +141,7 @@ class TestConan(ConanFile):
         copy(self, "*.txt", src=os.path.join(self.recipe_folder, "..", "sibling"),
              dst=self.export_folder)
 """
-        files = {"recipe/conanfile.py": conanfile,
-                 "sibling/file.txt": "Hello World!"}
+        files = {"recipe/conanfile.py": conanfile, "sibling/file.txt": "Hello World!"}
         client.save(files)
         client.current_folder = os.path.join(client.current_folder, "recipe")
         client.run("export . --user=lasote --channel=stable")
@@ -165,17 +170,23 @@ class TestConan(ConanFile):
                          dst=self.export_sources_folder)
 
             """)
-        client.save({"recipe/conanfile.py": conanfile,
-                     "test/src/file.txt": "Hello World!",
-                     "cpp/file.cpp": "Hello World!",
-                     "include/file.h": "Hello World!"})
+        client.save(
+            {
+                "recipe/conanfile.py": conanfile,
+                "test/src/file.txt": "Hello World!",
+                "cpp/file.cpp": "Hello World!",
+                "include/file.h": "Hello World!",
+            }
+        )
         client.current_folder = os.path.join(client.current_folder, "recipe")
         client.run("export . --user=lasote --channel=stable")
         layout = client.exported_layout()
         export_path = layout.export_sources()
-        assert sorted(['file.txt', 'file.cpp', 'file.h']) == sorted(os.listdir(export_path))
+        assert sorted(["file.txt", "file.cpp", "file.h"]) == sorted(
+            os.listdir(export_path)
+        )
 
-    @parameterized.expand([("myconanfile.py", ), ("Conanfile.py", )])
+    @parameterized.expand([("myconanfile.py",), ("Conanfile.py",)])
     def test_filename(self, filename):
         client = TestClient(light=True)
         client.save({filename: GenConanfile("hello", "1.2")})
@@ -186,7 +197,7 @@ class TestConan(ConanFile):
         conanfile = load(os.path.join(export_path, "conanfile.py"))
         assert "name = 'hello'" in conanfile
         manifest = load(os.path.join(export_path, "conanmanifest.txt"))
-        assert 'conanfile.py: 5dc49e518e15f3889cb2e097ce4d1dff' in manifest
+        assert "conanfile.py: 5dc49e518e15f3889cb2e097ce4d1dff" in manifest
 
     def test_exclude_basic(self):
         client = TestClient(light=True)
@@ -199,11 +210,15 @@ class TestConan(ConanFile):
     exports_sources = "*.cpp", "!*temp.cpp"
 """
 
-        client.save({CONANFILE: conanfile,
-                     "file.txt": "",
-                     "file1.txt": "",
-                     "file.cpp": "",
-                     "file_temp.cpp": ""})
+        client.save(
+            {
+                CONANFILE: conanfile,
+                "file.txt": "",
+                "file1.txt": "",
+                "file.cpp": "",
+                "file_temp.cpp": "",
+            }
+        )
         client.run("export .")
         layout = client.exported_layout()
         export_path = layout.export()
@@ -215,10 +230,16 @@ class TestConan(ConanFile):
 
     def test_exclude_folders(self):
         client = TestClient(light=True)
-        client.save({CONANFILE: GenConanfile("hello", "1.2").with_exports("*.txt", "!*/temp/*"),
-                     "file.txt": "",
-                     "any/temp/file1.txt": "",
-                     "other/sub/file2.txt": ""})
+        client.save(
+            {
+                CONANFILE: GenConanfile("hello", "1.2").with_exports(
+                    "*.txt", "!*/temp/*"
+                ),
+                "file.txt": "",
+                "any/temp/file1.txt": "",
+                "other/sub/file2.txt": "",
+            }
+        )
         client.run("export .")
         layout = client.exported_layout()
         export_path = layout.export()
@@ -228,14 +249,15 @@ class TestConan(ConanFile):
 
 
 class TestExport:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.client = TestClient(light=True)
-        self.files = {"conanfile.py": GenConanfile("hello0", "0.1").with_exports("*"),
-                      "main.cpp": "MyMain",
-                      "CMakeLists.txt": "MyCmake",
-                      "executable": "myexe"}
+        self.files = {
+            "conanfile.py": GenConanfile("hello0", "0.1").with_exports("*"),
+            "main.cpp": "MyMain",
+            "CMakeLists.txt": "MyCmake",
+            "executable": "myexe",
+        }
         self.ref = RecipeReference("hello0", "0.1", "lasote", "stable")
         self.client.save(self.files)
         self.client.run("export . --user=lasote --channel=stable")
@@ -244,22 +266,29 @@ class TestExport:
         reg_path = self.client.exported_layout().export()
         manif = FileTreeManifest.load(reg_path)
 
-        assert '%s: Exported' % str(self.ref) in self.client.out
-        assert '%s: Exported to cache folder: %s' % (str(self.ref), reg_path) in self.client.out
+        assert "%s: Exported" % str(self.ref) in self.client.out
+        assert (
+            "%s: Exported to cache folder: %s" % (str(self.ref), reg_path)
+            in self.client.out
+        )
         assert os.path.exists(reg_path)
 
         for name in list(self.files.keys()):
             assert os.path.exists(os.path.join(reg_path, name))
 
-        expected_sums = {'CMakeLists.txt': '3cf710785270c7e98a30d4a90ea66492',
-                         'conanfile.py': '5dbbe4328efa3342baba2a7ca961ede1',
-                         'executable': 'db299d5f0d82f113fad627a21f175e59',
-                         'main.cpp': 'd9c03c934a4b3b1670775c17c26f39e9'}
+        expected_sums = {
+            "CMakeLists.txt": "3cf710785270c7e98a30d4a90ea66492",
+            "conanfile.py": "5dbbe4328efa3342baba2a7ca961ede1",
+            "executable": "db299d5f0d82f113fad627a21f175e59",
+            "main.cpp": "d9c03c934a4b3b1670775c17c26f39e9",
+        }
         assert expected_sums == manif.file_sums
 
     def test_case_sensitive(self):
         self.ref = RecipeReference("hello0", "0.1", "lasote", "stable")
-        self.client.save({"conanfile.py": GenConanfile("hello0", "0.1").with_exports("*")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("hello0", "0.1").with_exports("*")}
+        )
         self.client.run("export . --user=lasote --channel=stable")
         assert "hello0/0.1@lasote/stable: Exported" in self.client.out
 
@@ -282,7 +311,11 @@ class OpenSSLConan(ConanFile):
         self.client.run("export . --user=lasote --channel=stable")
         layout = self.client.exported_layout()
         export_path = layout.export()
-        assert sorted(os.listdir(export_path)) == ['CMakeLists.txt', CONANFILE, CONAN_MANIFEST]
+        assert sorted(os.listdir(export_path)) == [
+            "CMakeLists.txt",
+            CONANFILE,
+            CONAN_MANIFEST,
+        ]
 
         # Now exports being a list instead a tuple
         content = """
@@ -297,35 +330,40 @@ class OpenSSLConan(ConanFile):
         self.client.run("export . --user=lasote --channel=stable")
         layout = self.client.exported_layout()
         export_path = layout.export()
-        assert sorted(os.listdir(export_path)) == ['CMakeLists.txt', CONANFILE, CONAN_MANIFEST]
+        assert sorted(os.listdir(export_path)) == [
+            "CMakeLists.txt",
+            CONANFILE,
+            CONAN_MANIFEST,
+        ]
 
 
 class TestExportMetadata:
-
     def test_revision_mode_hash(self):
         t = TestClient(light=True)
-        t.save({'conanfile.py': GenConanfile().with_revision_mode("hash")})
-        t.run(f"export . --name=name --version=version")
+        t.save({"conanfile.py": GenConanfile().with_revision_mode("hash")})
+        t.run("export . --name=name --version=version")
         layout = t.exported_layout()
         assert layout.reference.revision == "99c241d3d47396772cd1ac5a36307a29"
 
     def test_revision_mode_invalid(self):
         t = TestClient(light=True)
-        t.save({'conanfile.py': GenConanfile().with_revision_mode("auto")})
+        t.save({"conanfile.py": GenConanfile().with_revision_mode("auto")})
         t.run("export . --name=name --version=version", assert_error=True)
-        assert "ERROR: Revision mode should be one of 'hash' (default) or 'scm'" in t.out
+        assert (
+            "ERROR: Revision mode should be one of 'hash' (default) or 'scm'" in t.out
+        )
 
     def test_export_no_params(self):
         client = TestClient(light=True)
         client.save({"conanfile.py": GenConanfile("lib", "1.0")})
-        client.run('export .')
+        client.run("export .")
         assert "lib/1.0: Exported" in client.out
 
     def test_export_with_name_and_version(self):
         client = TestClient(light=True)
         client.save({"conanfile.py": GenConanfile()})
 
-        client.run('export . --name=lib --version=1.0')
+        client.run("export . --name=lib --version=1.0")
         assert "lib/1.0: Exported" in client.out
 
     def test_export_with_only_user_channel(self):
@@ -333,24 +371,26 @@ class TestExportMetadata:
         client = TestClient(light=True)
         client.save({"conanfile.py": GenConanfile("lib", "1.0")})
 
-        client.run('export .  --version= --user=user --channel=channel')
+        client.run("export .  --version= --user=user --channel=channel")
         assert "lib/1.0@user/channel: Exported" in client.out
 
     def test_export_conflict_no_user_channel(self):
         client = TestClient(light=True)
         client.save({"conanfile.py": GenConanfile()})
 
-        client.run('export . --name=pkg --version=0.1 --user=user --channel=channel')
+        client.run("export . --name=pkg --version=0.1 --user=user --channel=channel")
         assert "pkg/0.1@user/channel: Exported" in client.out
-        client.run('export . --name=pkg --version=0.1 --user=other --channel=stable')
+        client.run("export . --name=pkg --version=0.1 --user=other --channel=stable")
         assert "pkg/0.1@other/stable: Exported" in client.out
-        client.run('export . --name=pkg --version=0.1')
+        client.run("export . --name=pkg --version=0.1")
         assert "pkg/0.1: Exported" in client.out
-        client.run('export . --name=pkg --version=0.1')
+        client.run("export . --name=pkg --version=0.1")
         assert "pkg/0.1: Exported" in client.out
 
 
-@pytest.mark.skipif(platform.system() != "Linux", reason="Needs case-sensitive filesystem")
+@pytest.mark.skipif(
+    platform.system() != "Linux", reason="Needs case-sensitive filesystem"
+)
 def test_export_casing():
     # https://github.com/conan-io/conan/issues/8583
     client = TestClient(light=True)
@@ -360,12 +400,15 @@ def test_export_casing():
             exports = "file1", "FILE1"
             exports_sources = "test", "TEST"
         """)
-    client.save({"conanfile.py": conanfile,
-                 "test": "some lowercase",
-                 "TEST": "some UPPERCASE",
-                 "file1": "file1 lowercase",
-                 "FILE1": "file1 UPPERCASE"
-                 })
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "test": "some lowercase",
+            "TEST": "some UPPERCASE",
+            "file1": "file1 lowercase",
+            "FILE1": "file1 UPPERCASE",
+        }
+    )
     assert client.load("test") == "some lowercase"
     assert client.load("TEST") == "some UPPERCASE"
     assert client.load("file1") == "file1 lowercase"
@@ -389,7 +432,10 @@ def test_export_invalid_refs():
     assert "ERROR: Invalid package version '0.1%'" in c.out
     c.run("export . --name=pkg --version=0.1 --user=user%", assert_error=True)
     assert "ERROR: Invalid package user 'user%'" in c.out
-    c.run("export . --name=pkg --version=0.1 --user=user --channel=channel%", assert_error=True)
+    c.run(
+        "export . --name=pkg --version=0.1 --user=user --channel=channel%",
+        assert_error=True,
+    )
     assert "ERROR: Invalid package channel 'channel%'" in c.out
 
 
@@ -400,8 +446,10 @@ def test_allow_temp_uppercase():
     assert "ERROR: Conan packages names 'Pkg/0.1' must be all lowercase" in c.out
     c.save_home({"global.conf": "core:allow_uppercase_pkg_names=True"})
     c.run("export . --name=Pkg --version=0.1")
-    assert "WARN: Package name 'Pkg/0.1' has uppercase, " \
-           "and has been allowed by temporary config." in c.out
+    assert (
+        "WARN: Package name 'Pkg/0.1' has uppercase, "
+        "and has been allowed by temporary config." in c.out
+    )
 
 
 def test_warn_special_chars_refs():
@@ -412,13 +460,15 @@ def test_warn_special_chars_refs():
     c.run("export . --name=name --version=0.1 --user=user+some")
     assert "WARN: User containing special chars is discouraged 'user+some'" in c.out
     c.run("export . --name=pkg.name --version=0.1 --user=user --channel=channel+some")
-    assert "WARN: Channel containing special chars is discouraged 'channel+some'" in c.out
+    assert (
+        "WARN: Channel containing special chars is discouraged 'channel+some'" in c.out
+    )
 
 
 def test_export_json():
     c = TestClient(light=True)
     c.save({"conanfile.py": GenConanfile()})
     c.run("export . --name=foo --version=0.1 --format json")
-    info = json.loads(c.stdout)
+    info = json.loads(c.out)
     assert info["reference"] == "foo/0.1#4d670581ccb765839f2239cc8dff8fbd"
     assert len(info) == 1  # Only "reference" key yet

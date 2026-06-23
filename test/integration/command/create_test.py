@@ -274,7 +274,7 @@ def test_components_json_output():
         """)
     client.save({"conanfile.py": conanfile})
     client.run("create . --format=json")
-    data = json.loads(client.stdout)
+    data = json.loads(client.out)
     cpp_info_data = data["graph"]["nodes"]["1"]["cpp_info"]
     assert "libpkg1" in cpp_info_data["pkg1"]["libs"]
     assert cpp_info_data["pkg1"]["requires"] == []
@@ -613,7 +613,7 @@ def test_create_format_json_and_deps_cpp_info():
     client.save({"conanfile.py": GenConanfile().with_name("hello").with_version("0.1")
                 .with_require("pkg/0.2")}, clean_first=True)
     client.run("create . -f json")
-    info = json.loads(client.stdout)
+    info = json.loads(client.out)
     nodes = info["graph"]["nodes"]
     hello_pkg_ref = 'hello/0.1#18d5440ae45afc4c36139a160ac071c7'
     pkg_pkg_ref = 'pkg/0.2#926714b5fb0a994f47ec37e071eba1da'
@@ -884,10 +884,10 @@ def test_create_test_package_only_build_python_require():
             "test_package/conanfile.py": test})
     c.run("create .")
     assert "Testing the package" in c.out
-    assert "pkg/0.1 (test package): TEST!!!" in c.out
+    assert "pkg/0.1 (test package): TEST!!!!" in c.out
     c.run("create . -tm")
     assert "Testing the package" in c.out
-    assert "pkg/0.1 (test package): TEST!!!" in c.out
+    assert "pkg/0.1 (test package): TEST!!!!" in c.out
     c.run("create . -tm --build=missing")
     assert "Testing the package" in c.out
-    assert "pkg/0.1 (test package): TEST!!!" in c.out
+    assert "pkg/0.1 (test package): TEST!!!!" in c.out

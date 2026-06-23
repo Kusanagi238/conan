@@ -175,11 +175,14 @@ class PrivateProvider:
         find such one"""
 
         def _replace_message(message):
-            if "not found" in message:
+            if not message:
+                return None
+            # match case-insensitively to handle "Not found", "not found", etc.
+            if "not found" in message.lower():
                 return f"Package '{ref}' not scanned: Not found."
             return None
 
-        error_msgs = filter(bool, [_replace_message(error["message"]) for error in errors])
+        error_msgs = filter(bool, [_replace_message(error.get("message")) for error in errors])
         return next(error_msgs, "Unknown error")
 
     def _get(self, ref):
@@ -206,7 +209,16 @@ class PrivateProvider:
         except Exception as e:
             raise e
 
-        response_json = response.json()
+        try:
+            response_json = response.json()
+        except ValueError:
+            # Non-JSON or empty response body: return a structured error for this ref
+            body = getattr(response, "text", None)
+            msg = f"Invalid JSON response from provider '{self.name}'"
+            if body:
+                msg = f"{msg}: {body!r}"
+            return {"error": msg}
+
         # filter the extensions key with graphql data
         response_json.pop('extensions', None)
 

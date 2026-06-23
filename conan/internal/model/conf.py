@@ -15,9 +15,9 @@ BUILT_IN_CONFS = {
     "core:required_conan_version": "Raise if current version does not match the defined range.",
     "core:non_interactive": "Disable interactive user input, raises error if input necessary",
     "core:warnings_as_errors": "Treat warnings matching any of the patterns in this list as errors and then raise an exception. "
-                               "Current warning tags are 'network', 'deprecated'",
+    "Current warning tags are 'network', 'deprecated'",
     "core:skip_warnings": "Do not show warnings matching any of the patterns in this list. "
-                          "Current warning tags are 'network', 'deprecated', 'experimental'",
+    "Current warning tags are 'network', 'deprecated', 'experimental'",
     "core:default_profile": "Defines the default host profile ('default' by default)",
     "core:default_build_profile": "Defines the default build profile ('default' by default)",
     "core:allow_uppercase_pkg_names": "Temporarily (will be removed in 2.X) allow uppercase names",
@@ -159,7 +159,6 @@ class _ConfVarPlaceHolder:
 
 
 class _ConfValue:
-
     def __init__(self, name, value, path=False, update=None):
         if name != name.lower():
             raise ConanException("Conf '{}' must be lowercase".format(name))
@@ -167,7 +166,9 @@ class _ConfValue:
         self._value = value
         self._value_type = type(value)
         if isinstance(value, (_PackageOption, SettingsItem)):
-            raise ConanException(f"Invalid 'conf' type, please use Python types (int, str, ...)")
+            raise ConanException(
+                "Invalid 'conf' type, please use Python types (int, str, ...)"
+            )
         self._path = path
         self._update = update
 
@@ -226,7 +227,9 @@ class _ConfValue:
             self._value.extend(value)
         else:
             if isinstance(value, (_PackageOption, SettingsItem)):
-                raise ConanException(f"Invalid 'conf' type, please use Python types (int, str, ...)")
+                raise ConanException(
+                    "Invalid 'conf' type, please use Python types (int, str, ...)"
+                )
             self._value.append(value)
 
     def prepend(self, value):
@@ -237,7 +240,9 @@ class _ConfValue:
             self._value = value + self._value
         else:
             if isinstance(value, (_PackageOption, SettingsItem)):
-                raise ConanException(f"Invalid 'conf' type, please use Python types (int, str, ...)")
+                raise ConanException(
+                    "Invalid 'conf' type, please use Python types (int, str, ...)"
+                )
             self._value.insert(0, value)
 
     def compose_conf_value(self, other):
@@ -255,7 +260,7 @@ class _ConfValue:
                 pass
             else:
                 new_value = self._value[:]  # do a copy
-                new_value[index:index + 1] = other._value  # replace the placeholder
+                new_value[index : index + 1] = other._value  # replace the placeholder
                 self._value = new_value
         elif v_type is dict and o_type is dict:
             if self._update:
@@ -264,24 +269,34 @@ class _ConfValue:
                 new_value = other._value.copy()
                 new_value.update(self._value)
                 self._value = new_value
-        elif issubclass(v_type, numbers.Number) and issubclass(o_type, numbers.Number):
-            # They might be different kind of numbers, so skip the check below
-            pass
         elif self._value is None or other._value is None:
             # It means any of those values were an "unset" so doing nothing because we don't
             # really know the original value type
             pass
+        elif (
+            isinstance(v_type, type)
+            and isinstance(o_type, type)
+            and issubclass(v_type, numbers.Number)
+            and issubclass(o_type, numbers.Number)
+        ):
+            # They might be different kind of numbers, so skip the check below
+            pass
         elif o_type != v_type:
-            raise ConanException("It's not possible to compose {} values "
-                                 "and {} ones.".format(v_type.__name__, o_type.__name__))
+            raise ConanException(
+                "It's not possible to compose {} values and {} ones.".format(
+                    v_type.__name__, o_type.__name__
+                )
+            )
         # TODO: In case of any other object types?
 
     def set_relative_base_folder(self, folder):
         if not self._path:
             return
         if isinstance(self._value, list):
-            self._value = [os.path.join(folder, v) if v != _ConfVarPlaceHolder else v
-                           for v in self._value]
+            self._value = [
+                os.path.join(folder, v) if v != _ConfVarPlaceHolder else v
+                for v in self._value
+            ]
         if isinstance(self._value, dict):
             self._value = {k: os.path.join(folder, v) for k, v in self._value.items()}
         elif isinstance(self._value, str):
@@ -345,17 +360,25 @@ class Conf:
                     return False
                 if str(v).lower() in Conf.boolean_true_expressions:
                     return True
-                raise ConanException(f"[conf] {conf_name} must be a boolean-like object "
-                                     f"(true/false, 1/0, on/off) and value '{v}' does not match it.")
+                raise ConanException(
+                    f"[conf] {conf_name} must be a boolean-like object "
+                    f"(true/false, 1/0, on/off) and value '{v}' does not match it."
+                )
             elif check_type is str and not isinstance(v, str):
                 return str(v)
             elif v is None:  # value was unset
                 return default
-            elif (check_type is not None and not isinstance(v, check_type) or
-                  check_type is int and isinstance(v, bool)):
-                raise ConanException(f"[conf] {conf_name} must be a "
-                                     f"{check_type.__name__}-like object. The value '{v}' "
-                                     f"introduced is a {type(v).__name__} object")
+            elif (
+                check_type is not None
+                and not isinstance(v, check_type)
+                or check_type is int
+                and isinstance(v, bool)
+            ):
+                raise ConanException(
+                    f"[conf] {conf_name} must be a "
+                    f"{check_type.__name__}-like object. The value '{v}' "
+                    f"introduced is a {type(v).__name__} object"
+                )
             return v
         else:
             return default
@@ -373,9 +396,11 @@ class Conf:
         return value
 
     def show(self, fnpattern, pattern=""):
-        return {key: self.get(key)
-                for key in self._values.keys()
-                if fnmatch.fnmatch(pattern + key, fnpattern)}
+        return {
+            key: self.get(key)
+            for key in self._values.keys()
+            if fnmatch.fnmatch(key, pattern + fnpattern)
+        }
 
     def copy(self):
         c = Conf()
@@ -386,7 +411,9 @@ class Conf:
         """
         Returns a string with the format ``name=conf-value``
         """
-        return "\n".join([v.dumps() for v in sorted(self._values.values(), key=lambda x: x._name)])
+        return "\n".join(
+            [v.dumps() for v in sorted(self._values.values(), key=lambda x: x._name)]
+        )
 
     def serialize(self):
         """
@@ -518,7 +545,9 @@ class Conf:
         """
         result = Conf()
         # Reading the list of all the configurations selected by the user to use for the package_id
-        package_id_confs = self.get("tools.info.package_id:confs", default=[], check_type=list)
+        package_id_confs = self.get(
+            "tools.info.package_id:confs", default=[], check_type=list
+        )
         for conf_name in package_id_confs:
             matching_confs = [c for c in self._values if re.match(conf_name, c)]
             for name in matching_confs:
@@ -535,15 +564,22 @@ class Conf:
     @staticmethod
     def _check_conf_name(conf):
         if USER_CONF_PATTERN.match(conf) is None and conf not in BUILT_IN_CONFS:
-            raise ConanException(f"[conf] Either '{conf}' does not exist in configuration list or "
-                                 f"the conf format introduced is not valid. Run 'conan config list' "
-                                 f"to see all the available confs.")
+            raise ConanException(
+                f"[conf] Either '{conf}' does not exist in configuration list or "
+                f"the conf format introduced is not valid. Run 'conan config list' "
+                f"to see all the available confs."
+            )
 
 
 class ConfDefinition:
     # Order is important, "define" must be latest
-    actions = (("+=", "append"), ("=+", "prepend"),
-               ("=!", "unset"), ("*=", "update"), ("=", "define"))
+    actions = (
+        ("+=", "append"),
+        ("=+", "prepend"),
+        ("=!", "unset"),
+        ("*=", "update"),
+        ("=", "define"),
+    )
 
     def __init__(self):
         self._pattern_confs = OrderedDict()
@@ -559,8 +595,9 @@ class ConfDefinition:
         Get the value of the conf name requested and convert it to the [type]-like passed.
         """
         pattern, name = self._split_pattern_name(conf_name)
-        return self._pattern_confs.get(pattern, Conf()).get(name, default=default,
-                                                            check_type=check_type, choices=choices)
+        return self._pattern_confs.get(pattern, Conf()).get(
+            name, default=default, check_type=check_type, choices=choices
+        )
 
     def show(self, fnpattern):
         """
@@ -575,8 +612,12 @@ class ConfDefinition:
                 patter_key += ":"
 
             pattern_values = patter_conf.show(fnpattern, patter_key)
-            result.update({patter_key + pattern_subkey: pattern_subvalue
-                           for pattern_subkey, pattern_subvalue in pattern_values.items()})
+            result.update(
+                {
+                    patter_key + pattern_subkey: pattern_subvalue
+                    for pattern_subkey, pattern_subvalue in pattern_values.items()
+                }
+            )
 
         return result
 
@@ -589,14 +630,14 @@ class ConfDefinition:
 
     @staticmethod
     def _split_pattern_name(pattern_name):
-        if pattern_name.count(":") >= 2:
+        if ":" in pattern_name:
             pattern, name = pattern_name.split(":", 1)
         else:
             pattern, name = None, pattern_name
         return pattern, name
 
     def get_conanfile_conf(self, ref, is_consumer=False):
-        """ computes package-specific Conf
+        """computes package-specific Conf
         it is only called when conanfile.buildenv is called
         the last one found in the profile file has top priority
         """
@@ -644,7 +685,9 @@ class ConfDefinition:
             if profile:
                 raise ConanException("[conf] '{}' not allowed in profiles".format(key))
             if pattern is not None:
-                raise ConanException("Conf '{}' cannot have a package pattern".format(key))
+                raise ConanException(
+                    "Conf '{}' cannot have a package pattern".format(key)
+                )
 
         # strip whitespaces before/after =
         # values are not strip() unless they are a path, to preserve potential whitespaces
@@ -665,8 +708,12 @@ class ConfDefinition:
             if pattern is None:
                 result.append(conf.dumps())
             else:
-                result.append("\n".join("{}:{}".format(pattern, line) if line else ""
-                                        for line in conf.dumps().splitlines()))
+                result.append(
+                    "\n".join(
+                        "{}:{}".format(pattern, line) if line else ""
+                        for line in conf.dumps().splitlines()
+                    )
+                )
         if result:
             result.append("")
         return "\n".join(result)
@@ -691,14 +738,16 @@ class ConfDefinition:
         except:  # It means eval() failed because of a string without quotes
             value = _v.strip()
         else:
-            if not isinstance(value, (numbers.Number, bool, dict, list, set, tuple)) \
-                    and value is not None:
+            if (
+                not isinstance(value, (numbers.Number, bool, dict, list, set, tuple))
+                and value is not None
+            ):
                 # If it is quoted string we respect it as-is
                 value = _v.strip()
         return value
 
     def loads(self, text, profile=False):
-        self._pattern_confs = {}
+        self._pattern_confs = OrderedDict()
 
         for line in text.splitlines():
             line = line.strip()

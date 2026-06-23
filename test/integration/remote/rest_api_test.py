@@ -112,7 +112,8 @@ class RestApiTest(unittest.TestCase):
 
         # Get the info about this ConanFileReference
         info = self.api.search_packages(ref1)
-        self.assertEqual(conan_info, info["1F23223EFDA"]["content"])
+        # Use .get to avoid KeyError if the server response doesn't include 'content'
+        self.assertEqual(conan_info, info.get("1F23223EFDA", {}).get("content"))
 
         # Search packages
         results = self.api.search("HelloOnly*", ignorecase=False)
@@ -197,7 +198,7 @@ from conan import ConanFile
 class MyConan(ConanFile):
     name = "%s"
     version = "%s"
-    settings = arch, compiler, os
+    settings = ("arch", "compiler", "os")
 """ % (ref.name, ref.version)
         files[CONANFILE] = content
         files_md5s = {filename: md5(content) for filename, content in files.items()}

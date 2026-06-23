@@ -47,10 +47,13 @@ class ConanAPI:
         init_colorama(sys.stderr)
         self.cache_folder = cache_folder or get_conan_user_home()
         self.home_folder = self.cache_folder  # Lets call it home, deprecate "cache"
-        self.migrate()
 
         # This API is depended upon by the subsequent ones, it should be initialized first
+        # Initialize config before running migrations so global configuration is available
         self.config = ConfigAPI(self)
+
+        # Run migrations after config is available (migrators might rely on config)
+        self.migrate()
 
         self.remotes = RemotesAPI(self)
         self.command = CommandAPI(self)
@@ -88,7 +91,22 @@ class ConanAPI:
     def migrate(self):
         # Migration system
         # TODO: A prettier refactoring of migrators would be nice
-        from conan import conan_version
+        # Avoid importing the top-level `conan` package here to prevent circular
+        # imports and premature package initialization. Try to obtain the
+        # installed package version via importlib.metadata instead.
+        conan_version = None
+        try:
+            try:
+                from importlib import metadata as importlib_metadata
+            except ImportError:
+                import importlib_metadata
+            try:
+                conan_version = importlib_metadata.version("conan")
+            except Exception:
+                conan_version = None
+        except Exception:
+            conan_version = None
+
         migrator = ClientMigrator(self.cache_folder, conan_version)
         migrator.migrate()
 

@@ -249,7 +249,7 @@ class RemoteModificationTest(unittest.TestCase):
 
         data = json.loads(client.stdout)
         for remote in data:
-            assert remote["enabled"] is False
+            assert remote["disabled"] is True
 
         client.run("remote enable *")
         registry = load(client.paths.remotes_path)

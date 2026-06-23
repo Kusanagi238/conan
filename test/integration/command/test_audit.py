@@ -99,7 +99,7 @@ def test_conan_audit_proxy():
     with proxy_response(400, {"error": "Not found"}):
         # Not finding a package should not be an error
         tc.run("audit list zlib/1.2.11")
-        assert "Package 'zlib/1.2.11' not scanned: Not found." in tc.stdout
+        assert "Package 'zlib/1.2.11' not scanned: Not found." in tc.out
 
     with proxy_response(403, {"error": "Error not shown"}):
         tc.run("audit list zlib/1.2.11", assert_error=True)
@@ -206,7 +206,7 @@ def test_conan_audit_private():
     with proxy_response(400, {"errors": [{"message": "Ref not found"}]}):
         # Not finding a package should not be an error
         tc.run("audit list zlib/1.2.11 -p=myprivate")
-        assert "Package 'zlib/1.2.11' not scanned: Not found." in tc.stdout
+        assert "Package 'zlib/1.2.11' not scanned: Not found." in tc.out
 
     with proxy_response(403, {"errors": [{"message": "Authentication error"}]}):
         tc.run("audit list zlib/1.2.11 -p=myprivate")
