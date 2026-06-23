@@ -1,5 +1,7 @@
 import re
 import textwrap
+import pytest
+import shutil
 
 from conan.test.assets.genconanfile import GenConanfile
 from conan.test.utils.tools import TestClient
@@ -23,7 +25,7 @@ def test_cmakedeps_direct_deps_paths():
     """)
     c.save({"conanfile.py": conanfile})
     c.run("create .")
-    conanfile = textwrap.dedent(f"""
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.cmake import CMake
         class PkgConan(ConanFile):
@@ -34,10 +36,14 @@ def test_cmakedeps_direct_deps_paths():
     c.save({"conanfile.py": conanfile}, clean_first=True)
     c.run(f"install . -c tools.cmake.cmakedeps:new={new_value}")
     cmake_paths = c.load("conan_cmakedeps_paths.cmake")
-    assert re.search(r"list\(PREPEND CMAKE_PROGRAM_PATH \".*/bin\"", cmake_paths)  # default
+    assert re.search(
+        r"list\(PREPEND CMAKE_PROGRAM_PATH \".*/bin\"", cmake_paths
+    )  # default
     assert re.search(r"list\(PREPEND CMAKE_LIBRARY_PATH \".*/mylib\"", cmake_paths)
     assert re.search(r"list\(PREPEND CMAKE_INCLUDE_PATH \".*/myincludes\"", cmake_paths)
-    assert re.search(r"list\(PREPEND CMAKE_FRAMEWORK_PATH \".*/myframework\"", cmake_paths)
+    assert re.search(
+        r"list\(PREPEND CMAKE_FRAMEWORK_PATH \".*/myframework\"", cmake_paths
+    )
 
 
 def test_cmakedeps_transitive_paths():
@@ -71,7 +77,7 @@ def test_cmakedeps_transitive_paths():
     """)
     c.save({"conanfile.py": conanfile})
     c.run("create .")
-    conanfile = textwrap.dedent(f"""
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         class PkgConan(ConanFile):
             requires = "libb/1.0"
@@ -81,14 +87,22 @@ def test_cmakedeps_transitive_paths():
     c.save({"conanfile.py": conanfile}, clean_first=True)
     c.run(f"install . -c tools.cmake.cmakedeps:new={new_value}")
     cmake_paths = c.load("conan_cmakedeps_paths.cmake")
-    assert re.search(r"list\(PREPEND CMAKE_PROGRAM_PATH \".*/libb.*/p/binb\"\)", cmake_paths)
+    assert re.search(
+        r"list\(PREPEND CMAKE_PROGRAM_PATH \".*/libb.*/p/binb\"\)", cmake_paths
+    )
     assert not re.search(r"list\(PREPEND CMAKE_PROGRAM_PATH /bina\"", cmake_paths)
-    assert re.search(r"list\(PREPEND CMAKE_LIBRARY_PATH \".*/libb.*/p/libb\" \".*/liba.*/p/liba\"\)",
-                     cmake_paths)
-    assert re.search(r"list\(PREPEND CMAKE_INCLUDE_PATH \".*/libb.*/p/includeb\" "
-                     r"\".*/liba.*/p/includea\"\)", cmake_paths)
+    assert re.search(
+        r"list\(PREPEND CMAKE_LIBRARY_PATH \".*/libb.*/p/libb\" \".*/liba.*/p/liba\"\)",
+        cmake_paths,
+    )
+    assert re.search(
+        r"list\(PREPEND CMAKE_INCLUDE_PATH \".*/libb.*/p/includeb\" "
+        r"\".*/liba.*/p/includea\"\)",
+        cmake_paths,
+    )
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_cmakedeps_deployer_relative_paths():
     c = TestClient()
     conanfile = textwrap.dedent("""
@@ -125,7 +139,7 @@ def test_cmakedeps_deployer_relative_paths():
 
     c.save({"conanfile.py": conanfile_cmake})
     c.run("create .")
-    conanfile = textwrap.dedent(f"""
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.cmake import CMake
         class PkgConan(ConanFile):
@@ -138,18 +152,31 @@ def test_cmakedeps_deployer_relative_paths():
     # Now with a deployment
     c.run(f"install . -c tools.cmake.cmakedeps:new={new_value} --deployer=full_deploy")
     cmake_paths = c.load("conan_cmakedeps_paths.cmake")
-    assert 'set(libb_DIR "${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/libb/1.0")' in cmake_paths
-    assert ('set(CONAN_RUNTIME_LIB_DIRS "$<$<CONFIG:Release>:${CMAKE_CURRENT_LIST_DIR}'
-            '/full_deploy/host/liba/1.0/bina>"') in cmake_paths
+    assert (
+        'set(libb_DIR "${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/libb/1.0")'
+        in cmake_paths
+    )
+    assert (
+        'set(CONAN_RUNTIME_LIB_DIRS "$<$<CONFIG:Release>:${CMAKE_CURRENT_LIST_DIR}'
+        '/full_deploy/host/liba/1.0/bina>"'
+    ) in cmake_paths
     liba_config = c.load("liba-config.cmake")
-    assert ('include("${CMAKE_CURRENT_LIST_DIR}/full_deploy/'
-            'host/liba/1.0/share/cmake/crypto.cmake")') in liba_config
+    assert (
+        'include("${CMAKE_CURRENT_LIST_DIR}/full_deploy/'
+        'host/liba/1.0/share/cmake/crypto.cmake")'
+    ) in liba_config
     liba_targets = c.load("liba-Targets-release.cmake")
-    assert ('set(liba_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/full_deploy/'
-            'host/liba/1.0")') in liba_targets
-    assert ('set(liba_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/full_deploy/'
-            'host/liba/1.0/includea" )') in liba_targets
+    assert (
+        'set(liba_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/full_deploy/'
+        'host/liba/1.0")'
+    ) in liba_targets
+    assert (
+        'set(liba_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/full_deploy/'
+        'host/liba/1.0/includea" )'
+    ) in liba_targets
 
+
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_cmakeconfigdeps_recipe():
     c = TestClient()
     conanfile = textwrap.dedent("""
@@ -162,12 +189,15 @@ def test_cmakeconfigdeps_recipe():
                 deps = CMakeConfigDeps(self)
                 deps.generate()
     """)
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
-            "app/conanfile.py": conanfile})
+    c.save(
+        {"dep/conanfile.py": GenConanfile("dep", "0.1"), "app/conanfile.py": conanfile}
+    )
     c.run("create dep")
     c.run("install app", assert_error=True)
-    assert "CMakeConfigDeps is being used in conanfile, but the conf " \
-           "'tools.cmake.cmakedeps:new' is not enabled" in c.out
+    assert (
+        "CMakeConfigDeps is being used in conanfile, but the conf "
+        "'tools.cmake.cmakedeps:new' is not enabled" in c.out
+    )
     c.run("install app -c tools.cmake.cmakedeps:new=will_break_next")
     # will not fail, still warn
     assert "WARN: Using the new CMakeConfigDeps generator" in c.out
@@ -187,8 +217,10 @@ def test_cmakeconfigdeps_recipe():
         """)
     c.save({"app/conanfile.py": conanfile}, clean_first=True)
     c.run("install app", assert_error=True)
-    assert "CMakeConfigDeps is being used in conanfile, but the conf " \
-           "'tools.cmake.cmakedeps:new' is not enabled" in c.out
+    assert (
+        "CMakeConfigDeps is being used in conanfile, but the conf "
+        "'tools.cmake.cmakedeps:new' is not enabled" in c.out
+    )
     c.run("install app -c tools.cmake.cmakedeps:new=will_break_next")
     assert "WARN: Using the new CMakeConfigDeps generator" in c.out
     c.run("install app -c tools.cmake.cmakedeps:new=recipe_will_break")
@@ -203,8 +235,10 @@ def test_cmakeconfigdeps_recipe():
         """)
     c.save({"app/conanfile.txt": conanfile}, clean_first=True)
     c.run("install app", assert_error=True)
-    assert "CMakeConfigDeps is being used in conanfile, but the conf " \
-           "'tools.cmake.cmakedeps:new' is not enabled" in c.out
+    assert (
+        "CMakeConfigDeps is being used in conanfile, but the conf "
+        "'tools.cmake.cmakedeps:new' is not enabled" in c.out
+    )
     c.run("install app -c tools.cmake.cmakedeps:new=will_break_next")
     assert "WARN: Using the new CMakeConfigDeps generator" in c.out
     c.run("install app -c tools.cmake.cmakedeps:new=recipe_will_break")
@@ -230,14 +264,19 @@ def test_system_wrappers():
     c.save({"conanfile.py": conanfile})
     c.run("create .")
 
-    c.run(f"install --requires=lib/system -g CMakeConfigDeps "
-          f"-c tools.cmake.cmakedeps:new={new_value}")
+    c.run(
+        f"install --requires=lib/system -g CMakeConfigDeps "
+        f"-c tools.cmake.cmakedeps:new={new_value}"
+    )
     cmake = c.load("lib-Targets-release.cmake")
     assert "add_library(lib::lib INTERFACE IMPORTED)" in cmake
-    assert "set_property(TARGET lib::lib APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n" \
-           '             $<$<CONFIG:RELEASE>:my_system_cool_lib>)' in cmake
+    assert (
+        "set_property(TARGET lib::lib APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n"
+        "             $<$<CONFIG:RELEASE>:my_system_cool_lib>)" in cmake
+    )
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_autolink_pragma():
     """https://github.com/conan-io/conan/issues/10837"""
     c = TestClient()
@@ -247,16 +286,29 @@ def test_autolink_pragma():
             def package_info(self):
                 self.cpp_info.set_property("cmake_set_interface_link_directories", True)
         """)
-    c.save({"conanfile.py": conanfile,
-            "test_package/conanfile.py": GenConanfile().with_test("pass")
-                                                       .with_settings("build_type")
-                                                       .with_generator("CMakeDeps")})
+    c.save(
+        {
+            "conanfile.py": conanfile,
+            "test_package/conanfile.py": GenConanfile()
+            .with_test("pass")
+            .with_settings("build_type")
+            .with_generator("CMakeDeps"),
+        }
+    )
     c.run("create . --name=pkg --version=0.1")
-    assert "CMakeDeps: cmake_set_interface_link_directories is legacy, not necessary" in c.out
+    assert (
+        "CMakeDeps: cmake_set_interface_link_directories is legacy, not necessary"
+        in c.out
+    )
     c.run(f"create . --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}")
-    assert "CMakeConfigDeps: cmake_set_interface_link_directories deprecated and invalid. " \
-           "The package 'package_info()' must correctly define the (CPS) information" in c.out
+    assert (
+        "CMakeConfigDeps: cmake_set_interface_link_directories deprecated and invalid. "
+        "The package 'package_info()' must correctly define the (CPS) information"
+        in c.out
+    )
 
+
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_consuming_cpp_info_with_components_dependency_from_same_package():
     c = TestClient()
     conanfile = textwrap.dedent("""
@@ -267,15 +319,21 @@ def test_consuming_cpp_info_with_components_dependency_from_same_package():
                 self.cpp_info.components["lib_extended"].type = 'shared-library'
                 self.cpp_info.components["lib_extended"].requires = ['lib']
         """)
-    c.save({"conanfile.py": conanfile,
-            "test_package/conanfile.py": GenConanfile().with_settings("build_type")
-                                                       .with_test("pass")
-                                                       .with_generator("CMakeDeps")})
+    c.save(
+        {
+            "conanfile.py": conanfile,
+            "test_package/conanfile.py": GenConanfile()
+            .with_settings("build_type")
+            .with_test("pass")
+            .with_generator("CMakeDeps"),
+        }
+    )
     c.run(f"create . --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}")
     # it doesn't break
     assert "find_package(pkg)" in c.out
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_consuming_cpp_info_with_components_dependency_from_other_package():
     c = TestClient()
     dep = textwrap.dedent("""
@@ -294,17 +352,25 @@ def test_consuming_cpp_info_with_components_dependency_from_other_package():
                 self.cpp_info.components["lib"].type = 'shared-library'
                 self.cpp_info.components["lib"].requires = ['dep::lib']
         """)
-    c.save({"dep/conanfile.py": dep,
+    c.save(
+        {
+            "dep/conanfile.py": dep,
             "pkg/conanfile.py": conanfile,
-            "pkg/test_package/conanfile.py": GenConanfile().with_settings("build_type")
-                                                           .with_test("pass")
-                                                           .with_generator("CMakeDeps")})
+            "pkg/test_package/conanfile.py": GenConanfile()
+            .with_settings("build_type")
+            .with_test("pass")
+            .with_generator("CMakeDeps"),
+        }
+    )
     c.run("create dep")
-    c.run(f"create pkg --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}")
+    c.run(
+        f"create pkg --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}"
+    )
     # it doesn't break
     assert "find_package(pkg)" in c.out
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_error_incorrect_component():
     # https://github.com/conan-io/conan/issues/18554
     c = TestClient()
@@ -315,18 +381,28 @@ def test_error_incorrect_component():
             def package_info(self):
                 self.cpp_info.requires = ['dep::lib']
         """)
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "0.1"),
             "pkg/conanfile.py": conanfile,
-            "pkg/test_package/conanfile.py": GenConanfile().with_settings("build_type")
-                                                           .with_generator("CMakeDeps")
-                                                           .with_test("pass")})
+            "pkg/test_package/conanfile.py": GenConanfile()
+            .with_settings("build_type")
+            .with_generator("CMakeDeps")
+            .with_test("pass"),
+        }
+    )
     c.run("create dep")
-    c.run(f"create pkg --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}",
-          assert_error=True)
-    assert ("ERROR: Error in generator 'CMakeDeps': pkg/0.1 recipe cpp_info did .requires to "
-            "'dep::lib' but component 'lib' not found in dep") in c.out
+    c.run(
+        f"create pkg --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}",
+        assert_error=True,
+    )
+    assert (
+        "ERROR: Error in generator 'CMakeDeps': pkg/0.1 recipe cpp_info did .requires to "
+        "'dep::lib' but component 'lib' not found in dep"
+    ) in c.out
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_consuming_cpp_info_transitively_by_requiring_root_component():
     c = TestClient()
     dependent_conanfile = textwrap.dedent("""
@@ -358,14 +434,23 @@ def test_consuming_cpp_info_transitively_by_requiring_root_component():
             def test(self):
                 pass
         """)
-    c.save({"dependent/conanfile.py": dependent_conanfile,
+    c.save(
+        {
+            "dependent/conanfile.py": dependent_conanfile,
             "main/conanfile.py": conanfile,
-            "main/test_package/conanfile.py":test_package})
-    c.run("create ./dependent/ --name=dependent --version=0.1 "
-          f"-c tools.cmake.cmakedeps:new={new_value}")
-    c.run(f"create ./main/ --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}")
+            "main/test_package/conanfile.py": test_package,
+        }
+    )
+    c.run(
+        "create ./dependent/ --name=dependent --version=0.1 "
+        f"-c tools.cmake.cmakedeps:new={new_value}"
+    )
+    c.run(
+        f"create ./main/ --name=pkg --version=0.1 -c tools.cmake.cmakedeps:new={new_value}"
+    )
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_cmake_find_mode_deprecated():
     tc = TestClient()
     dep = textwrap.dedent("""
@@ -385,6 +470,7 @@ def test_cmake_find_mode_deprecated():
     assert "CMakeConfigDeps does not support module find mode"
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_requires_to_application():
     c = TestClient()
     automake = textwrap.dedent("""
@@ -420,9 +506,13 @@ def test_requires_to_application():
                 pass
         """)
 
-    c.save({"automake/conanfile.py": automake,
+    c.save(
+        {
+            "automake/conanfile.py": automake,
             "libtool/conanfile.py": conanfile,
-            "libtool/test_package/conanfile.py":test_package})
+            "libtool/test_package/conanfile.py": test_package,
+        }
+    )
     c.run("create automake")
     c.run(f"create libtool -c tools.cmake.cmakedeps:new={new_value}")
     targets = c.load("libtool/test_package/libtool-Targets-release.cmake")
@@ -430,6 +520,7 @@ def test_requires_to_application():
     assert "automake::automake" not in targets
 
 
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="cmake not available")
 def test_requires_to_application_component():
     c = TestClient()
     automake = textwrap.dedent("""
@@ -472,9 +563,13 @@ def test_requires_to_application_component():
                 pass
         """)
 
-    c.save({"automake/conanfile.py": automake,
+    c.save(
+        {
+            "automake/conanfile.py": automake,
             "libtool/conanfile.py": conanfile,
-            "libtool/test_package/conanfile.py":test_package})
+            "libtool/test_package/conanfile.py": test_package,
+        }
+    )
     c.run("create automake")
     c.run(f"create libtool -c tools.cmake.cmakedeps:new={new_value}")
     targets = c.load("libtool/test_package/libtool-Targets-release.cmake")

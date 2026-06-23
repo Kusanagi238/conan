@@ -50,7 +50,7 @@ def test_clang_cstd_defaults():
     assert _make_cstd_default("clang", "17")== "gnu17"
     assert _make_cstd_default("clang", "18")== "gnu17"
     assert _make_cstd_default("clang", "19")== "gnu17"
-    assert _make_cstd_default("clang", "20"), "gnu17"
+    assert _make_cstd_default("clang", "20") == "gnu17"
 
 
 def test_apple_clang_cppstd_defaults():
