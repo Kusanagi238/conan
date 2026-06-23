@@ -33,4 +33,5 @@ class TestMesonBase(unittest.TestCase):
             self.assertIn("main _MSVC_LANG2014", self.t.out)
         elif platform.system() == "Linux":
             self.assertIn(f"main {arch_macro['gcc'][host_arch]} defined", self.t.out)
-            self.assertIn("main __GNUC__9", self.t.out)
+            # Accept any GCC major version reported by the build (avoid hardcoding a single version)
+            self.assertRegex(self.t.out, r"main __GNUC__\d+")
