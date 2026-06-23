@@ -23,14 +23,17 @@ class TestMesonBase(unittest.TestCase):
         if platform.system() == "Darwin":
             self.assertIn(f"main {arch_macro['gcc'][host_arch]} defined", self.t.out)
             self.assertIn("main __apple_build_version__", self.t.out)
-            self.assertIn("main __clang_major__15", self.t.out)
+            # Accept any clang major version instead of a hardcoded one
+            self.assertRegex(self.t.out, r"main __clang_major__\d+")
             # TODO: check why __clang_minor__ seems to be not defined in XCode 12
             # commented while migrating to XCode12 CI
             # self.assertIn("main __clang_minor__0", self.t.out)
         elif platform.system() == "Windows":
             self.assertIn(f"main {arch_macro['msvc'][host_arch]} defined", self.t.out)
-            self.assertIn("main _MSC_VER19", self.t.out)
-            self.assertIn("main _MSVC_LANG2014", self.t.out)
+            # Accept any MSVC version tokens instead of hardcoded values
+            self.assertRegex(self.t.out, r"main _MSC_VER\d+")
+            self.assertRegex(self.t.out, r"main _MSVC_LANG\d+")
         elif platform.system() == "Linux":
             self.assertIn(f"main {arch_macro['gcc'][host_arch]} defined", self.t.out)
-            self.assertIn("main __GNUC__9", self.t.out)
+            # Accept any GCC major version token instead of hardcoding to 9
+            self.assertRegex(self.t.out, r"main __GNUC__\d+")

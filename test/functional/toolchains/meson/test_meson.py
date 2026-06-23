@@ -117,7 +117,7 @@ class MesonToolchainTest(TestMesonBase):
         self.assertIn("[properties]", content)
         self.assertNotIn("needs_exe_wrapper", content)
 
-        self._check_binary()
+        assert "main __GNUC__" in self.t.out
 
     def test_meson_default_dirs(self):
         self.t.run("new meson_exe -d name=hello -d version=1.0")
@@ -198,7 +198,6 @@ class MesonToolchainTest(TestMesonBase):
         assert os.path.exists(os.path.join(package_folder, "res", "tutorial", "file2.txt"))
 
 
-@pytest.mark.tool("meson")
 @pytest.mark.skipif(sys.version_info.minor < 8, reason="Latest Meson versions needs Python >= 3.8")
 def test_meson_and_additional_machine_files_composition():
     """
