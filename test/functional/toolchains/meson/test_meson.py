@@ -15,6 +15,11 @@ from test.functional.toolchains.meson._base import TestMesonBase
 class MesonToolchainTest(TestMesonBase):
 
     def test_definition_of_global_options(self):
+        import shutil
+        import pytest
+        if shutil.which("meson") is None:
+            pytest.skip("Skipping test because Meson tool is not available in PATH")
+
         conanfile_py = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.meson import Meson, MesonToolchain
@@ -120,6 +125,11 @@ class MesonToolchainTest(TestMesonBase):
         self._check_binary()
 
     def test_meson_default_dirs(self):
+        import shutil
+        import pytest
+        if shutil.which("meson") is None:
+            pytest.skip("Skipping test because Meson tool is not available in PATH")
+
         self.t.run("new meson_exe -d name=hello -d version=1.0")
         # self.t.run("new meson_exe -d name=hello -d version=1.0 -m meson_exe")
 
