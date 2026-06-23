@@ -198,7 +198,7 @@ class MesonToolchainTest(TestMesonBase):
         assert os.path.exists(os.path.join(package_folder, "res", "tutorial", "file2.txt"))
 
 
-@pytest.mark.tool("meson")
+@pytest.mark.skipif(__import__('shutil').which("meson") is None, reason="meson tool not available")
 @pytest.mark.skipif(sys.version_info.minor < 8, reason="Latest Meson versions needs Python >= 3.8")
 def test_meson_and_additional_machine_files_composition():
     """
@@ -214,7 +214,6 @@ def test_meson_and_additional_machine_files_composition():
         os=Windows
         arch=x86_64
         compiler=gcc
-        compiler.version=9
         compiler.cppstd=17
         compiler.libcxx=libstdc++11
         build_type=Release
@@ -250,7 +249,7 @@ def test_meson_and_additional_machine_files_composition():
     assert match
 
 
-@pytest.mark.tool("meson")
+@pytest.mark.skipif(__import__('shutil').which("meson") is None, reason="meson tool not available")
 @pytest.mark.skipif(platform.system() != "Windows", reason="Only for Windows")
 @pytest.mark.skipif(sys.version_info.minor < 8, reason="Latest Meson versions needs Python >= 3.8")
 def test_meson_using_prefix_path_in_application():
