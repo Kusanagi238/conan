@@ -3,7 +3,7 @@ import pytest
 from conan.test.utils.tools import TestClient
 
 
-@pytest.mark.tool("cmake")
+@pytest.mark.skipif(__import__('shutil').which("cmake") is None, reason="Required 'cmake' tool is not available")
 def test_conan_new_compiles():
     # TODO: Maybe add more templates that are not used in the rest of the test suite?
     tc = TestClient()

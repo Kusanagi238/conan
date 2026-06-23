@@ -7,7 +7,7 @@ from conan.test.assets.sources import gen_function_cpp
 from test.functional.toolchains.meson._base import TestMesonBase
 
 
-@pytest.mark.tool("pkg_config")
+@pytest.mark.tool("pkg_config", "cmake")
 class MesonPkgConfigTest(TestMesonBase):
     _conanfile_py = textwrap.dedent("""
     from conan import ConanFile
@@ -39,15 +39,26 @@ class MesonPkgConfigTest(TestMesonBase):
     """)
 
     def test_reuse(self):
+        import shutil
+        import pytest
+
+        # If cmake is not available, skip the parts of the test that would invoke cmake templates/tools
+        if shutil.which("cmake") is None:
+            pytest.skip("cmake not available, skipping test_reuse that requires cmake")
+
         self.t.run("new cmake_lib -d name=hello -d version=0.1")
-        self.t.run("create . -tf=\"\"")
+        self.t.run('create . -tf=""')
 
         app = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
         # Prepare the actual consumer package
-        self.t.save({"conanfile.py": self._conanfile_py,
-                     "meson.build": self._meson_build,
-                     "main.cpp": app},
-                    clean_first=True)
+        self.t.save(
+            {
+                "conanfile.py": self._conanfile_py,
+                "meson.build": self._meson_build,
+                "main.cpp": app,
+            },
+            clean_first=True,
+        )
 
         # Build in the cache
         self.t.run("build .")
