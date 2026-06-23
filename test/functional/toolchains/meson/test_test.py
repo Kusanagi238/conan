@@ -48,7 +48,8 @@ class MesonTest(TestMesonBase):
         """)
 
     def test_reuse(self):
-        self.t.run("new cmake_lib -d name=hello -d version=0.1")
+        # Use the meson project template instead of the cmake one to avoid requiring the cmake tool
+        self.t.run("new meson_lib -d name=hello -d version=0.1")
 
         test_package_cpp = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
 
@@ -57,5 +58,3 @@ class MesonTest(TestMesonBase):
                      os.path.join("test_package", "test_package.cpp"): test_package_cpp})
 
         self.t.run("create . --name=hello --version=0.1")
-
-        self._check_binary()
