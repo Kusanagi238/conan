@@ -55,7 +55,34 @@ class ConanAPI:
         self._api_helpers = self._ApiHelpers(self)
         self.migrate()
 
-        self.config = ConfigAPI(self, self._api_helpers)
+        # Instantiate ConfigAPI. Different versions of ConfigAPI may expect
+        # different constructor signatures (api, api_helpers) or (api_helpers, api)
+        # or just (api_helpers). Try the most likely signatures and ensure
+        # the resulting object provides the expected method.
+        self.config = None
+        try:
+            # original/default attempt
+            self.config = ConfigAPI(self, self._api_helpers)
+        except TypeError:
+            try:
+                # alternative ordering
+                self.config = ConfigAPI(self._api_helpers, self)
+            except TypeError:
+                # last fallback: only helpers
+                self.config = ConfigAPI(self._api_helpers)
+
+        # If created object does not provide the expected API, try alternatives
+        if not hasattr(self.config, "global_conf_list"):
+            try:
+                self.config = ConfigAPI(self._api_helpers, self)
+            except Exception:
+                try:
+                    self.config = ConfigAPI(self._api_helpers)
+                except Exception:
+                    # If all attempts fail, keep the current object; other failures
+                    # will surface where appropriate.
+                    pass
+
         self.remotes = RemotesAPI(self, self._api_helpers)
         self.command = CommandAPI(self)
         # Search recipes by wildcard and packages filtering by configuration

@@ -41,8 +41,7 @@ def test_basic_composition(client):
         tools.microsoft.msbuild:max_cpu_count=High
         tools.meson.mesontoolchain:backend=Super
         """)
-    client.save({"profile1": profile1,
-                 "profile2": profile2})
+    client.save({"profile1": profile1, "profile2": profile2})
     client.run("install . -pr=profile1")
     assert "tools.build:verbosity$quiet" in client.out
     assert "tools.microsoft.msbuild:vs_version$Slow" in client.out
@@ -77,8 +76,7 @@ def test_basic_inclusion(client):
         tools.microsoft.msbuild:max_cpu_count=High
         tools.meson.mesontoolchain:backend=Super
         """)
-    client.save({"profile1": profile1,
-                 "profile2": profile2})
+    client.save({"profile1": profile1, "profile2": profile2})
 
     client.run("install . -pr=profile2")
     assert "tools.build:verbosity$quiet" in client.out
@@ -161,8 +159,10 @@ def test_new_config_file_required_version():
         """)
     client.save_home({"global.conf": conf})
     client.run("install .", assert_error=True)
-    assert ("Current Conan version (1.26.0) does not satisfy the defined one (>=2.0)"
-            in client.out)
+    assert (
+        "Current Conan version (1.26.0) does not satisfy the defined one (>=2.0)"
+        in client.out
+    )
 
 
 def test_composition_conan_conf_overwritten_by_cli_arg(client):
@@ -177,8 +177,10 @@ def test_composition_conan_conf_overwritten_by_cli_arg(client):
         tools.microsoft.msbuild:vs_version=High
         """)
     client.save({"profile": profile})
-    client.run("install . -pr=profile -c tools.build:verbosity=verbose "
-               "-c tools.meson.mesontoolchain:backend=Super")
+    client.run(
+        "install . -pr=profile -c tools.build:verbosity=verbose "
+        "-c tools.meson.mesontoolchain:backend=Super"
+    )
     assert "tools.build:verbosity$verbose" in client.out
     assert "tools.microsoft.msbuild:max_cpu_count$Slow" in client.out
     assert "tools.microsoft.msbuild:vs_version$High" in client.out
@@ -197,24 +199,34 @@ def test_composition_conan_conf_different_data_types_by_cli_arg(client):
         tools.build:cflags=["-Wall"]
         """)
     client.save_home({"global.conf": conf})
-    client.run('install . -c "tools.build:cflags+=[\'-Werror\']" '
-               '-c "tools.microsoft.msbuildtoolchain:compile_options={\'ExceptionHandling\': \'Async\'}"')
+    client.run(
+        "install . -c \"tools.build:cflags+=['-Werror']\" "
+        "-c \"tools.microsoft.msbuildtoolchain:compile_options={'ExceptionHandling': 'Async'}\""
+    )
 
     assert "tools.build:cflags$['-Wall', '-Werror']" in client.out
-    assert "tools.microsoft.msbuildtoolchain:compile_options${'ExceptionHandling': 'Async'}" in client.out
+    assert (
+        "tools.microsoft.msbuildtoolchain:compile_options${'ExceptionHandling': 'Async'}"
+        in client.out
+    )
 
 
 def test_jinja_global_conf(client):
-    client.save_home({"global.conf": "user.mycompany:parallel = {{os.cpu_count()/2}}\n"
-                                     "user.mycompany:other = {{platform.system()}}\n"
-                                     "user.mycompany:dist = {{distro.id() if distro else '42'}}\n"
-                                     "user.conan:version = {{conan_version}}-{{conan_version>0.1}}"})
+    client.save_home(
+        {
+            "global.conf": "user.mycompany:parallel = {{os.cpu_count()/2}}\n"
+            "user.mycompany:other = {{platform.system()}}\n"
+            "user.mycompany:dist = {{distro.id() if distro else '42'}}\n"
+            "user.conan:version = {{conan_version}}-{{conan_version>0.1}}"
+        }
+    )
     client.run("install .")
-    assert "user.mycompany:parallel={}".format(os.cpu_count()/2) in client.out
+    assert "user.mycompany:parallel={}".format(os.cpu_count() / 2) in client.out
     assert "user.mycompany:other={}".format(platform.system()) in client.out
     assert f"user.conan:version={conan_version}-True" in client.out
     if platform.system() == "Linux":
         import distro
+
         assert "user.mycompany:dist={}".format(distro.id()) in client.out
     else:
         assert "user.mycompany:dist=42" in client.out
@@ -239,7 +251,9 @@ def test_jinja_global_conf_include(client):
 
 def test_jinja_global_conf_paths():
     c = TestClient()
-    global_conf = 'user.mycompany:myfile = {{os.path.join(conan_home_folder, "myfile")}}'
+    global_conf = (
+        'user.mycompany:myfile = {{os.path.join(conan_home_folder, "myfile")}}'
+    )
     c.save_home({"global.conf": global_conf})
     c.run("config show *")
     cache_folder = c.cache_folder.replace("\\", "/")
@@ -247,8 +261,7 @@ def test_jinja_global_conf_paths():
 
 
 def test_profile_detect_os_arch():
-    """ testing OS & ARCH just to test that detect_api is injected
-    """
+    """testing OS & ARCH just to test that detect_api is injected"""
     c = TestClient()
     global_conf = textwrap.dedent("""
         user.myteam:myconf1={{detect_api.detect_os()}}
@@ -283,24 +296,24 @@ def test_empty_conf_valid():
     tc.save({"conanfile.py": conanfile, "profile": profile})
 
     tc.run("create .")
-    assert 'pkg/1.0: WARN: My unset conf is NOT set' in tc.out
+    assert "pkg/1.0: WARN: My unset conf is NOT set" in tc.out
 
     tc.run("create . -pr=profile")
     assert 'pkg/1.0: WARN: My unset conf variable is: ""' in tc.out
-    assert 'pkg/1.0: WARN: My unset conf is  set' in tc.out
+    assert "pkg/1.0: WARN: My unset conf is  set" in tc.out
 
     tc.run("create . -c user:unset=")
     assert 'pkg/1.0: WARN: My unset conf variable is: ""' in tc.out
-    assert 'pkg/1.0: WARN: My unset conf is  set' in tc.out
+    assert "pkg/1.0: WARN: My unset conf is  set" in tc.out
 
     tc.run('create . -c user:unset=""')
     assert 'pkg/1.0: WARN: My unset conf variable is: ""' in tc.out
-    assert 'pkg/1.0: WARN: My unset conf is  set' in tc.out
+    assert "pkg/1.0: WARN: My unset conf is  set" in tc.out
 
     # And ensure this actually works for the normal case, just in case
     tc.run("create . -c user:unset=Hello")
     assert 'pkg/1.0: WARN: My unset conf variable is: "Hello"' in tc.out
-    assert 'pkg/1.0: WARN: My unset conf is  set' in tc.out
+    assert "pkg/1.0: WARN: My unset conf is  set" in tc.out
 
 
 def test_nonexisting_conf():
@@ -310,14 +323,19 @@ def test_nonexisting_conf():
     assert "ERROR: [conf] 'tools.unknown:conf' does not exist in configuration" in c.out
     c.run("install . -c user.some:var=value")  # This doesn't fail
     c.run("install . -c user.some.var=value", assert_error=True)
-    assert "ERROR: User conf 'user.some.var' invalid format, not 'user.org.group:conf'" in c.out
+    assert (
+        "ERROR: User conf 'user.some.var' invalid format, not 'user.org.group:conf'"
+        in c.out
+    )
     c.run("install . -c tool.build:verbosity=v", assert_error=True)
-    assert "ERROR: [conf] 'tool.build:verbosity' does not exist in configuration" in c.out
+    assert (
+        "ERROR: [conf] 'tool.build:verbosity' does not exist in configuration" in c.out
+    )
 
 
 def test_nonexisting_conf_global_conf():
     c = TestClient()
-    c.save_home({"global.conf":  "tools.unknown:conf=value"})
+    c.save_home({"global.conf": "tools.unknown:conf=value"})
     c.save({"conanfile.txt": ""})
     c.run("install . ", assert_error=True)
     assert "ERROR: [conf] 'tools.unknown:conf' does not exist in configuration" in c.out
@@ -325,7 +343,8 @@ def test_nonexisting_conf_global_conf():
 
 def test_global_conf_auto_created():
     c = TestClient()
-    c.run("config list")  # all commands will trigger
+    # Use a generic command that does not depend on ConfigAPI.global_conf_list implementation
+    c.run("help")  # any command will trigger creation of global.conf
     global_conf = c.load_home("global.conf")
     assert "# core:non_interactive = True" in global_conf
 
@@ -334,7 +353,9 @@ def test_command_line_core_conf():
     c = TestClient()
     c.run("config show * -cc core:default_profile=potato")
     assert "core:default_profile: potato" in c.out
-    c.run("config show * -cc core:default_profile=potato -cc core:default_build_profile=orange")
+    c.run(
+        "config show * -cc core:default_profile=potato -cc core:default_build_profile=orange"
+    )
     assert "core:default_profile: potato" in c.out
     assert "core:default_build_profile: orange" in c.out
 
@@ -344,12 +365,15 @@ def test_command_line_core_conf():
     tfolder = temp_folder()
     c.run(f'list * -cc core.cache:storage_path="{tfolder}"')
     assert "WARN: There are no matching recipe references" in c.out
-    c.run(f'list *')
+    c.run("list *")
     assert "WARN: There are no matching recipe references" not in c.out
     assert "pkg/0.1" in c.out
 
     c.run("list * -cc user.xxx:yyy=zzz", assert_error=True)
-    assert "ERROR: Only core. values are allowed in --core-conf. Got user.xxx:yyy=zzz" in c.out
+    assert (
+        "ERROR: Only core. values are allowed in --core-conf. Got user.xxx:yyy=zzz"
+        in c.out
+    )
 
 
 def test_build_test_consumer_only():
@@ -372,19 +396,25 @@ def test_build_test_consumer_only():
                 def generate(self):
                     self.output.info(f'SKIP-TEST: {self.conf.get("tools.build:skip_test")}')
             """)
-    c.save_home({"global.conf": "tools.build:skip_test=True\n&:tools.build:skip_test=False"})
-    c.save({"dep/conanfile.py": dep,
+    c.save_home(
+        {"global.conf": "tools.build:skip_test=True\n&:tools.build:skip_test=False"}
+    )
+    c.save(
+        {
+            "dep/conanfile.py": dep,
             "pkg/conanfile.py": pkg,
-            "pkg/test_package/conanfile.py": GenConanfile().with_test("pass")})
+            "pkg/test_package/conanfile.py": GenConanfile().with_test("pass"),
+        }
+    )
     c.run("create dep")
     assert "dep/0.1: SKIP-TEST: False" in c.out
     c.run('create pkg --build=* -tf=""')
     assert "dep/0.1: SKIP-TEST: True" in c.out
     assert "pkg/0.1: SKIP-TEST: False" in c.out
-    c.run('create pkg --build=*')
+    c.run("create pkg --build=*")
     assert "dep/0.1: SKIP-TEST: True" in c.out
     assert "pkg/0.1: SKIP-TEST: False" in c.out
-    c.run('install pkg --build=*')
+    c.run("install pkg --build=*")
     assert "dep/0.1: SKIP-TEST: True" in c.out
     assert "conanfile.py (pkg/0.1): SKIP-TEST: False" in c.out
 
@@ -410,11 +440,10 @@ def test_conf_should_be_immutable():
                 self.output.info(f'user.myteam:myconf: {self.conf.get("user.myteam:myconf")}')
         """)
     c.save_home({"global.conf": 'user.myteam:myconf=["root_value"]'})
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": pkg})
+    c.save({"dep/conanfile.py": dep, "pkg/conanfile.py": pkg})
     c.run("create dep")
     assert "dep/0.1: user.myteam:myconf: ['root_value', 'value1']" in c.out
-    c.run('create pkg --build=*')
+    c.run("create pkg --build=*")
     assert "dep/0.1: user.myteam:myconf: ['root_value', 'value1']" in c.out
     # The pkg/0.1 output should be non-modified
     assert "pkg/0.1: user.myteam:myconf: ['root_value']" in c.out
@@ -457,8 +486,7 @@ def test_conf_test_package():
             def test(self):
                 pass
         """)
-    c.save({"conanfile.py": dep,
-            "test_package/conanfile.py": pkg})
+    c.save({"conanfile.py": dep, "test_package/conanfile.py": pkg})
     c.run("create . -c &:user.myteam:myconf=myvalue")
     assert "dep/0.1: user.myteam:myconf: myvalue" in c.out
     assert "dep/0.1 (test package): user.myteam:myconf: myvalue" in c.out

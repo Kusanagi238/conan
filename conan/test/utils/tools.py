@@ -139,8 +139,8 @@ class TestingResponse(object):
 
     def json(self):
         try:
-            return json.loads(self.test_response.content)
-        except:
+            return json.loads(self.text)
+        except Exception:
             raise ValueError("The response is not a JSON")
 
 
@@ -205,7 +205,7 @@ class TestRequester:
             response = app.post(url, **kwargs)
             return TestingResponse(response)
         else:
-            requests.post(url, **kwargs)
+            return requests.post(url, **kwargs)
 
     def _prepare_call(self, url, kwargs):
         if not url.startswith("http://fake"):  # Call to S3 (or external), perform a real request
@@ -342,7 +342,7 @@ class TestServer:
             raise Exception("Pass a pref with .rev.revision (Testing framework)")
         prev = self.test_server.server_store.get_last_package_revision(pref)
         _tmp = copy.copy(prev)
-        _tmp.revision = prev
+        _tmp.revision = prev.revision
         return _tmp
 
     def package_revision_time(self, pref):

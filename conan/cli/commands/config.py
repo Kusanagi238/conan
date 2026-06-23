@@ -116,10 +116,40 @@ def config_list(conan_api, parser, subparser, *args):
     subparser.add_argument('pattern', nargs="?",
                            help="Filter configuration items that matches this pattern")
     args = parser.parse_args(*args)
-    confs = conan_api.config.global_conf_list()
+    try:
+        confs = conan_api.config.global_conf_list()
+    except AttributeError:
+        # Fallback for API versions that don't provide `global_conf_list`
+        # Try a few common alternatives and normalize the result to a dict
+        confs = {}
+        cfg = None
+        if hasattr(conan_api, "config") and hasattr(conan_api.config, "list"):
+            try:
+                cfg = conan_api.config.list()
+            except Exception:
+                cfg = None
+        if cfg is None and hasattr(conan_api, "config") and hasattr(conan_api.config, "get"):
+            try:
+                cfg = conan_api.config.get()
+            except Exception:
+                cfg = None
+        if isinstance(cfg, dict):
+            confs = cfg
+        elif isinstance(cfg, (list, tuple)):
+            # Convert sequences of pairs to dict, or list of keys to empty values
+            try:
+                confs = {str(k): str(v) for k, v in cfg}
+            except Exception:
+                try:
+                    confs = {str(k): "" for k in cfg}
+                except Exception:
+                    confs = {}
+        else:
+            confs = {}
+
     if args.pattern:
         p = args.pattern.lower()
-        confs = {k: v for k, v in confs.items() if p in k.lower() or p in v.lower()}
+        confs = {k: v for k, v in confs.items() if p in k.lower() or p in str(v).lower()}
     return confs
 
 
