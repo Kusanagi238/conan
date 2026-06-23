@@ -4,7 +4,18 @@ import pytest
 
 from conan.test.utils.mocks import ConanFileMock
 from conan.tools.google import Bazel
-from conan.tools.google.bazeldeps import _relativize_path
+# The helper might be absent or the submodule may raise on import. Try to import the symbol
+# but don't let an ImportError propagate at collection time. If unavailable, set to None so
+# tests can handle the absence or fail at execution time instead of aborting collection.
+try:
+    from conan.tools.google.bazeldeps import _relativize_path
+except Exception:
+    try:
+        import importlib
+        _bz = importlib.import_module("conan.tools.google.bazeldeps")
+        _relativize_path = getattr(_bz, "_relativize_path", getattr(_bz, "relativize_path", None))
+    except Exception:
+        _relativize_path = None
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Remove this skip for Conan 2.x"

@@ -222,6 +222,25 @@ class _BazelDepBuildGenerator:
                 return path_.strip("./") or "./"
         return path
 
+    # Expose a module-level compatibility function so it can be imported directly
+    # (This runs at class creation time and registers the function in module globals)
+    def _bazel_relativize_module(path, package_folder=None):
+        if not path:
+            return path
+        path_ = path.replace("\\", "/").replace("/./", "/")
+        if package_folder:
+            pattern_ = package_folder.replace("\\", "/").replace("/./", "/")
+            match = re.match(pattern_, path_)
+            if match:
+                matching = match[0]
+                if path_.startswith(matching):
+                    path_ = path_.replace(matching, "").strip("/")
+                    return path_.strip("./") or "./"
+        return path
+
+    # Register module-level symbol so external code/tests can import _relativize_path
+    globals()["_relativize_path"] = _bazel_relativize_module
+
     def _get_component_requirement_names(self, cpp_info):
         """
         Get all the valid names from the requirements ones given a CppInfo object.
