@@ -214,7 +214,6 @@ def test_meson_and_additional_machine_files_composition():
         os=Windows
         arch=x86_64
         compiler=gcc
-        compiler.version=9
         compiler.cppstd=17
         compiler.libcxx=libstdc++11
         build_type=Release
