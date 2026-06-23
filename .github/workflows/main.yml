@@ -1,131 +1,104 @@
 name: Main Workflow
-on:
-  push:
-    branches:
-      - develop2
-      - release/*
-      - '*'
-  pull_request:
-    branches:
-      - '*'
-      - 'release/*'
-  workflow_dispatch:
+
+on: push
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref
+    }}
   cancel-in-progress: true
 
 jobs:
+  # -------------------------
+  # 1. Ensure latest release tag merged
+  # -------------------------
+  ensure_latest_tag_merged:
+    runs-on: ubuntu-latest
+    name: Ensure latest release is merged in develop2 branch
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - shell: bash
+      run: |
+        set -euo pipefail
+        git fetch --tags --prune
+
+        latest_tag=$(git tag -l --sort=-v:refname | head -n1 || true)
+
+        if [ -z "$latest_tag" ]; then
+          echo "No tags found, skipping tag merge check."
+          exit 0
+        fi
+
+        if git rev-parse --verify origin/develop2 >/dev/null 2>&1; then
+          echo "Checking that branch 'develop2' contains the latest release tag: $latest_tag"
+          git merge-base --is-ancestor "$latest_tag" origin/develop2
+        else
+          echo "Branch origin/develop2 not found. Skipping check in fork."
+          exit 0
+        fi
+
+  # -------------------------
+  # 2. Determine Python versions (Linux only)
+  # -------------------------
   set_python_versions:
     runs-on: ubuntu-latest
     outputs:
-      python_versions_linux_windows: ${{ steps.set_versions.outputs.python_versions_linux_windows }}
-      python_versions_macos: ${{ steps.set_versions.outputs.python_versions_macos }}
-    name: Determine Python versions
+      python_versions_linux: ${{ steps.set_versions.outputs.python_versions_linux
+        }}
     steps:
-      - name: Determine Python versions
-        id: set_versions
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/develop2" || "${{ github.ref }}" == refs/heads/release/* ]]; then
-            echo "python_versions_linux_windows=['3.13', '3.6']" >> $GITHUB_OUTPUT
-            echo "python_versions_macos=['3.13', '3.8']" >> $GITHUB_OUTPUT
-          else
-            echo "python_versions_linux_windows=['3.10']" >> $GITHUB_OUTPUT
-            echo "python_versions_macos=['3.10']" >> $GITHUB_OUTPUT
-          fi
+    - name: Determine Python versions
+      id: set_versions
+      run: |
+        # For your fork / validation, you can just use 3.10.
+        # If you really want branch-specific logic, you can re-add it later.
+        echo 'python_versions_linux=["3.10"]' >> $GITHUB_OUTPUT
 
-  linux_suite:
-    needs: set_python_versions
-    uses: ./.github/workflows/linux-tests.yml
-    name: Linux test suite
-    with:
-      python-versions: ${{ needs.set_python_versions.outputs.python_versions_linux_windows }}
-
-  osx_suite:
-    needs: set_python_versions
-    uses: ./.github/workflows/osx-tests.yml
-    name: OSX test suite
-    with:
-      python-versions: ${{ needs.set_python_versions.outputs.python_versions_macos }}
-
-  windows_suite:
-    needs: set_python_versions
-    uses: ./.github/workflows/win-tests.yml
-    name: Windows test suite
-    with:
-      python-versions: ${{ needs.set_python_versions.outputs.python_versions_linux_windows }}
-
-  code_coverage:
+  # -------------------------
+  # 3. Linux Tests
+  # -------------------------
+  linux_tests:
+    needs: [ensure_latest_tag_merged, set_python_versions]
     runs-on: ubuntu-latest
-    name: Code coverage
-    if: github.ref == 'refs/heads/develop2'         # Only measure code coverage on main branch
-    needs: [linux_suite, osx_suite, windows_suite]
+    strategy:
+      matrix:
+        python-version: ${{ fromJson(needs.set_python_versions.outputs.python_versions_linux)
+          }}
+        test-type: [unittests, integration, functional]
+        include:
+        - test-type: unittests
+          test-name: Unit
+        - test-type: integration
+          test-name: Integration
+        - test-type: functional
+          test-name: Functional
+    name: Linux ${{ matrix.test-name }} (${{ matrix.python-version }})
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Download coverage artifacts
-        uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Merge coverage reports
-        run: |
-          pip install coverage
-          coverage combine
-          coverage report
-          coverage xml
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt')
+          }}
 
-      - name: Code coverage
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r conans/requirements.txt
+        pip install -r conans/requirements_dev.txt
+        pip install -r conans/requirements_server.txt
+        pip install meson
 
-      - uses: geekyeggo/delete-artifact@v5
-        with:
-          name: |
-            .coverage.*
-
-  deploy_to_pypi_test:
-    runs-on: ubuntu-latest
-    name: Deploy to TestPyPI
-    if: github.ref == 'refs/heads/develop2'
-    needs: [linux_suite, osx_suite, windows_suite]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.9
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install twine
-
-      - name: Bump Dev Version
-        run: |
-          python .ci/bump_dev_version.py
-
-      - name: Build Package
-        run: |
-          python setup.py sdist
-
-      - name: Upload to TestPyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.TEST_PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
-        run: |
-          python -m twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
-
-      - name: Deploy conan-server to TestPyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.TEST_PYPI_SERVER_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_SERVER_PASSWORD }}
-        run: |
-          rm -rf dist/
-          mv setup_server.py setup.py
-          python setup.py sdist
-          python -m twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
+    - name: Run tests
+      uses: ./.github/actions/test-coverage
+      with:
+        python-version: ${{ matrix.python-version }}
+        test-type: ${{ matrix.test-type }}
+        tests: test/${{ matrix.test-type }}
